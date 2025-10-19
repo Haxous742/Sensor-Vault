@@ -1,0 +1,82 @@
+name: Build and Deploy Frontend with Nginx + Backend Proxy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js (for frontend + backend)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3️⃣ Install and build frontend
+      - name: Install and build frontend
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build
+
+      # 4️⃣ Copy built frontend to nginx directory
+      - name: Move built files
+        run: |
+          mkdir -p /tmp/nginx/dist
+          cp -r frontend/dist/* /tmp/nginx/dist/
+
+      # 5️⃣ Install Nginx
+      - name: Install Nginx
+        run: sudo apt-get update && sudo apt-get install -y nginx
+
+      # 6️⃣ Configure Nginx to serve frontend and proxy /api to backend
+      - name: Configure Nginx
+        run: |
+          sudo bash -c 'cat > /etc/nginx/sites-available/default <<EOF
+          server {
+              listen 80;
+              server_name localhost;
+
+              root /tmp/nginx/dist;
+              index index.html;
+
+              location / {
+                  try_files \$uri /index.html;
+              }
+
+              location /api/ {
+                  proxy_pass http://localhost:5000/;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade \$http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_set_header Host \$host;
+              }
+          }
+          EOF'
+
+      # 7️⃣ Start backend
+      - name: Start backend (Express)
+        working-directory: ./backend
+        run: |
+          npm ci
+          nohup npm start &
+          sleep 5
+
+      # 8️⃣ Start Nginx
+      - name: Start Nginx
+        run: sudo systemctl restart nginx
+
+      # 9️⃣ Test the setup
+      - name: Test endpoints
+        run: |
+          curl -I http://localhost
+          curl -I http://localhost/api/hello
