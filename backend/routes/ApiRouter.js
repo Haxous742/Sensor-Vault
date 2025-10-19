@@ -15,4 +15,8 @@ ApiRouter.get("/gay", (req, res) => {
   res.json({ message: "You found the secret endpoint!" });
 });
 
+ApiRouter.get("/lesbian", (req, res) => {
+  res.json({ message: "You found the secret endpoint!" });
+});
+
 export default ApiRouter;
