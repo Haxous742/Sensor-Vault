@@ -11,4 +11,8 @@ ApiRouter.get("/health", (req, res) => {
   res.json({ status: "API is healthy" });
 });
 
+ApiRouter.get("/gay", (req, res) => {
+  res.json({ message: "You found the secret endpoint!" });
+});
+
 export default ApiRouter;

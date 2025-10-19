@@ -23,7 +23,7 @@ const LandingPage = () => {
     return () => socket.off("new_message");
   }, []);
 
-  return <h1>Landing Page</h1>;
+  return <h1>Hellooooooo Sensor Ki MKC</h1>;
 
  
 }
