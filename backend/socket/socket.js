@@ -6,7 +6,7 @@ let io; // to hold the socket instance
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: "*",
+      origin: "http://localhost:5173",
       methods: ["GET", "POST"],
     },
   });
