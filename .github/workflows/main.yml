@@ -1,0 +1,41 @@
+name: Deploy Sensor-Vault
+
+on:
+  push:
+    branches:
+      - main   # Trigger on pushes to main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: SSH to VM and deploy
+      uses: appleboy/ssh-action@v0.1.9
+      with:
+        host: ${{ secrets.AZURE_VM_IP }}          # your VM IP
+        username: ${{ secrets.AZURE_VM_USER }}      # VM username
+        password: ${{ secrets.AZURE_VM_PASSWORD }}  # or use private key
+        port: 22
+        script: |
+          cd ~/Sensor-Vault
+          git pull
+
+          # Build frontend
+          cd frontend
+          sudo npm install
+          sudo npm run build
+          sudo rm -rf /var/www/sensor-vault/*
+          sudo cp -r dist/* /var/www/sensor-vault/
+          sudo chown -R www-data:www-data /var/www/sensor-vault
+          sudo chmod -R 755 /var/www/sensor-vault
+
+          # Restart backend
+          cd ../backend
+          pm2 restart 0
+
+          # Reload Nginx
+          sudo systemctl restart nginx
