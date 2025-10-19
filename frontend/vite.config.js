@@ -3,5 +3,14 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
+   server: {
+    proxy: {
+      '/api': 'http://localhost:5000',
+      '/socket.io': {
+        target: 'http://localhost:5000',
+        ws: true, // 🔥 this is crucial for WebSocket proxying
+      },
+    }
+  },
   plugins: [react()],
 })
