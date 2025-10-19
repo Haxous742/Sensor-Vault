@@ -1,18 +1,31 @@
-import express from "express";  // If using "type": "module" in package.json
-// const express = require("express"); // If not using ESM (see note below)
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
-// Middleware to parse JSON
-app.use(express.json());
+// Fix __dirname and __filename for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Example route
-app.get("/", (req, res) => {
-  res.send("Hello from Express backend!");
+// Path to your built React app
+const distPath = path.join(__dirname, "../frontend/dist");
+
+// Serve static files from Vite build
+app.use(express.static(distPath));
+
+// Example API route
+app.get("/api/hello", (req, res) => {
+  res.json({ message: "Hello from Express backend!" });
+});
+
+// ✅ Regex catch-all route for React (Express v5 safe)
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
 });
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
