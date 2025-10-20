@@ -22,12 +22,14 @@ export default function Dashboard_login() {
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // ✅ important for cookies
         body: JSON.stringify({ password }),
       });
 
       const data = await response.json();
 
       if (data.success) {
+        // ✅ cookie is set automatically in the browser
         navigate("/dashboard");
       } else {
         setError(data.message || "Invalid password");

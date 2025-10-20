@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import http from "http";
 import { initSocket } from "./socket/socket.js";
 import ApiRouter from "./routes/ApiRouter.js";
+import cookieParser from "cookie-parser";
 
 
 
@@ -17,7 +18,7 @@ const PORT = process.env.PORT || 5000;
 
 
 app.use(express.json());
-
+app.use(cookieParser()); // middle cookie parser
 
 app.use(express.json()); // this middleware will parse JSON bodies: req.body
 app.use(express.urlencoded({ extended: true }));
