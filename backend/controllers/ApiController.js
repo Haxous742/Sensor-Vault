@@ -38,7 +38,7 @@ export const login = async (req, res) => {
         httpOnly: true,
         secure: true,  // ✅ use false only for local dev
         sameSite: "none",
-        maxAge: 3600000
+        maxAge: 360000000
       });
       return res.status(200).json({ success: true, message: "Login successful" });
     } else {
