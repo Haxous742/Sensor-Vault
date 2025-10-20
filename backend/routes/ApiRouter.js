@@ -1,6 +1,7 @@
 
 import express from "express";
 import { test } from "../controllers/ApiController.js";
+import { login } from "../controllers/ApiController.js";
 
 const ApiRouter = express.Router();
 
@@ -23,5 +24,9 @@ ApiRouter.get("/trans", (req, res) => {
 ApiRouter.get("/lesbian", (req, res) => {
   res.json({ message: "You found the secret endpoint!" });
 });
+
+
+// rounter for handling login
+ApiRouter.post("/login", login);
 
 export default ApiRouter;
