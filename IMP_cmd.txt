@@ -1,0 +1,12 @@
+to run pm2 -  pm2 start server.js --name "backend"
+
+certbot - sudo certbot --nginx -d sensorvault.live -d www.sensorvault.live
+
+nginx config file :  sudo nano /etc/nginx/sites-available/default
+
+to check 5000 port : sudo lsof -i :5000
+
+sudo npm run build
+
+sudo rm -rf /var/www/sensor-vault/*
+sudo cp -r dist/* /var/www/sensor-vault/
