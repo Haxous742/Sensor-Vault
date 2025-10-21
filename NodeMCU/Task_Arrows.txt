@@ -1,0 +1,116 @@
+#include <MD_MAX72xx.h>
+#include <SPI.h>
+
+#define HARDWARE_TYPE MD_MAX72XX::FC16_HW
+#define DATA_PIN 13
+#define CLK_PIN 14
+#define CS_PIN 12
+#define MAX_DEVICES 4
+
+// ADC input pins for 4 matrices
+int adcPins[MAX_DEVICES] = {32, 33, 34, 35};
+
+MD_MAX72XX mx(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
+
+// Arrow patterns (8x8 bitmaps)
+byte arrow_NE[8] = {
+  B00000111,
+  B00000011,
+  B00000101,
+  B00001000,
+  B00010000,
+  B00100000,
+  B01000000,
+  B10000000
+};
+
+byte arrow_NW[8] = {
+  B11100000,
+  B11000000,
+  B10100000,
+  B00010000,
+  B00001000,
+  B00000100,
+  B00000010,
+  B00000001
+};
+
+byte arrow_SE[8] = {
+  B10000000,
+  B01000000,
+  B00100000,
+  B00010000,
+  B00001000,
+  B00000101,
+  B00000011,
+  B00000111
+};
+
+byte arrow_SW[8] = {
+  B00000001,
+  B00000010,
+  B00000100,
+  B00001000,
+  B00010000,
+  B10100000,
+  B11000000,
+  B11100000
+};
+
+void setup() {
+  Serial.begin(115200);
+  mx.begin();
+  mx.control(MD_MAX72XX::INTENSITY, 6);
+  mx.control(MD_MAX72XX::SHUTDOWN, false);
+  mx.clear();
+
+  for (int i = 0; i < MAX_DEVICES; i++) {
+    pinMode(adcPins[i], INPUT);
+    analogSetPinAttenuation(adcPins[i], ADC_11db); // full 0–3.3V range
+  }
+
+  Serial.println("\n=== ESP32 4x8x8 LED Matrix (mV Based Direction Display) ===");
+  Serial.println("Voltage Mapping (mV): 0–825=NE | 826–1650=NW | 1651–2475=SE | 2476–3300=SW");
+  Serial.println("------------------------------------------------------------\n");
+}
+
+void loop() {
+  Serial.println("Current ADC (mV) Readings and Directions:");
+
+  for (int i = 0; i < MAX_DEVICES; i++) {
+    int mV = analogReadMilliVolts(adcPins[i]);
+    String direction;
+
+    if (mV <250) {
+      displayPattern(i, arrow_NE);
+      direction = "NE";
+    } else if (mV < 500) {
+      displayPattern(i, arrow_SE);
+      direction = "NW";
+    } else if (mV < 1500) {
+      displayPattern(i, arrow_SW);
+      direction = "SE";
+    } else {
+      displayPattern(i, arrow_NW);
+      direction = "SW";
+    }
+
+  //   Serial.print("Matrix ");
+  //   Serial.print(i);
+  //   Serial.print(" (Pin ");
+  //   Serial.print(adcPins[i]);
+  //   Serial.print("): ");
+  //   Serial.print(mV);
+  //   Serial.print(" mV → ");
+  //   Serial.println(direction);
+  }
+
+  // Serial.println("------------------------------------------------------------\n");
+  delay(50);
+}
+
+void displayPattern(uint8_t device, byte *pattern) {
+  for (uint8_t row = 0; row < 8; row++) {
+    mx.setRow(device, row, pattern[row]);
+  }
+}
