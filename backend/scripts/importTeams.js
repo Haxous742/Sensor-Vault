@@ -5,41 +5,58 @@ import Team from "../models/Team.js";
 const csvFilePath = "./Teams.csv";
 
 export async function importTeamsFromCSV() {
-  const teamNames = [];
+  const teams = [];
+  let currentTeam = null;
+  let turnCounter = 1; // for serial numbering
 
   return new Promise((resolve, reject) => {
     fs.createReadStream(csvFilePath)
       .pipe(csvParser())
       .on("data", (row) => {
-        // Assume first column has the team name (could also use Object.keys(row)[0])
-        const firstColumn = Object.values(row)[0];
-        if (firstColumn && firstColumn.trim()) {
-          teamNames.push(firstColumn.trim());
+        const teamName = row["Team Name"]?.trim();
+        const role = row["Candidate role"]?.trim();
+        const name = row["Candidate's Name"]?.trim();
+        const email = row["Candidate's Email"]?.trim().toLowerCase();
+
+        if (teamName) {
+          // Start of a new team
+          if (currentTeam) teams.push(currentTeam); // push the previous team before starting a new one
+
+          currentTeam = {
+            name: teamName,
+            turn: turnCounter++,
+            leader: { name: "", email: "" },
+            members: [],
+          };
+        }
+
+        // If we're processing a team
+        if (currentTeam) {
+          if (role === "Team Leader") {
+            currentTeam.leader = { name, email };
+          } else if (role === "Team Member") {
+            currentTeam.members.push({ name, email });
+          }
         }
       })
       .on("end", async () => {
-        console.log("✅ CSV parsed successfully");
+        // Push last team
+        if (currentTeam) teams.push(currentTeam);
 
-        // Insert teams into MongoDB
-        for (const name of teamNames) {
+        console.log(`✅ Parsed ${teams.length} teams from CSV.`);
+
+        // Insert or update MongoDB entries
+        for (const teamData of teams) {
           try {
-            const exists = await Team.findOne({ name });
-            if (!exists) {
-              await Team.create({
-                name,
-                turn: 0,
-                leader: { name: "Default Leader", email: "leader@example.com" },
-                members: [
-                  { name: "Member 1", email: "member1@example.com" },
-                  { name: "Member 2", email: "member2@example.com" },
-                ],
-              });
-              console.log(`✅ Added team: ${name}`);
+            const existingTeam = await Team.findOne({ name: teamData.name });
+            if (existingTeam) {
+              console.log(`⚠️ Team already exists: ${teamData.name}`);
             } else {
-              console.log(`⚠️  Team already exists: ${name}`);
+              await Team.create(teamData);
+              console.log(`✅ Added team: ${teamData.name}`);
             }
           } catch (err) {
-            console.error(`❌ Error adding ${name}:`, err.message);
+            console.error(`❌ Error adding team ${teamData.name}:`, err.message);
           }
         }
 
