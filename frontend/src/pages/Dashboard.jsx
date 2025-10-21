@@ -27,6 +27,7 @@ const Dashboard = () => {
   useEffect(() => {
     socket.on("timer_update", (data) => {
       console.log("Timer updated:", data.time);
+      setTimer(data.time);
     });
     return () => {
       socket.off("timer_update");
