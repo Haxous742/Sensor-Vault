@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+
+@font-face {
+  font-family: 'Anurati';
+  src: url('/Anurati-Regular.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'Rocket';
+  src: url('/Rocket.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'Sakana';
+  src: url('/Sakana.ttf') format('opentype');
+}
+
