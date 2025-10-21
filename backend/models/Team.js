@@ -5,7 +5,7 @@ const teamSchema = new Schema(
   {
     
     name: { type: String, required: true },
-    turn: {type: Integer},
+    turn: {type: Number, default: 0},
     
     leader: {
       name: { type: String, required: true },
