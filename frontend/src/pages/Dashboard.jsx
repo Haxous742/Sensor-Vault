@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-// Initialize socket with backend URL from environment variable
 const socket = io("/", { withCredentials: true });
 
 const Dashboard = () => {
@@ -11,7 +10,7 @@ const Dashboard = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredTeams, setFilteredTeams] = useState([]);
 
-  // Fetch teams from backend
+  // Fetch teams
   useEffect(() => {
     const fetchTeams = async () => {
       try {
@@ -25,10 +24,9 @@ const Dashboard = () => {
     fetchTeams();
   }, []);
 
-  // Listen for timer updates from backend
+  // Listen for backend time updates
   useEffect(() => {
     socket.on("timer_update", (data) => {
-      console.log("Timer updated:", data.time);
       setTimer(data.time);
     });
     return () => {
@@ -36,7 +34,6 @@ const Dashboard = () => {
     };
   }, []);
 
-  // Send selected team when starting timer
   const handleStart = async () => {
     if (!selectedTeam) return;
     try {
@@ -52,27 +49,38 @@ const Dashboard = () => {
   };
 
   const handleStop = async () => {
+    if (!selectedTeam) return;
     try {
       await fetch("/api/stop", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
+        body: JSON.stringify({ team: selectedTeam }),
       });
     } catch (error) {
       console.error("Failed to stop timer:", error);
     }
   };
 
-  const formatTime = (time) => String(time).padStart(4, "0");
+  const formatTime = (timeInSeconds) => {
+    const minutes = Math.floor(timeInSeconds / 60)
+      .toString()
+      .padStart(2, "0");
+    const seconds = (timeInSeconds % 60).toString().padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  };
 
-  // Filter team suggestions as user types
+  // Handle input and suggestions
   const handleInputChange = (e) => {
     const value = e.target.value;
     setSelectedTeam(value);
+
     if (value.trim() === "") {
       setShowSuggestions(false);
       setFilteredTeams([]);
       return;
     }
+
     const filtered = teams.filter((team) =>
       team.toLowerCase().includes(value.toLowerCase())
     );
@@ -80,7 +88,6 @@ const Dashboard = () => {
     setShowSuggestions(true);
   };
 
-  // When user selects a suggestion
   const handleSuggestionClick = (team) => {
     setSelectedTeam(team);
     setShowSuggestions(false);

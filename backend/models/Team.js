@@ -47,6 +47,7 @@ const teamSchema = new Schema(
     task4Done: { type: Boolean, default: false },
 
     startedAt: { type: Date },
+    current: {type: Boolean, default: false},
 
   },
   
