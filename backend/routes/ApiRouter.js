@@ -5,6 +5,7 @@ import { login } from "../controllers/ApiController.js";
 import { verify } from "../controllers/ApiController.js";
 import { start } from "../controllers/ApiController.js";
 import { stop } from "../controllers/ApiController.js";
+import { getTeams } from "../controllers/ApiController.js";
 
 const ApiRouter = express.Router();
 
@@ -25,5 +26,7 @@ ApiRouter.post("/start", start);
 
 // to stop the time in the backend
 ApiRouter.post("/stop", stop);
+
+ApiRouter.get("/getTeams", getTeams);
 
 export default ApiRouter;

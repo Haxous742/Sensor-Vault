@@ -28,14 +28,14 @@ app.use(express.urlencoded({ extended: true }));
 // Example API route
 
 
-
 app.use("/api/iot", IOTRouter);
 app.use("/api", ApiRouter);
 
 //cors policy
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173","https://www.sensorvault.live"],
+    methods: ["GET", "POST"],
     credentials: true, // 👈 REQUIRED for cookies + socket credentials
   })
 );

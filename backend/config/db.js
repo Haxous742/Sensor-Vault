@@ -6,7 +6,6 @@ export const connectDB = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ MONGODB CONNECTED SUCCESSFULLY!");
 
-    // --- Run your CSV import after DB connection ---
     await importTeamsFromCSV();
     console.log("✅ Team data imported successfully from CSV!");
   } catch (error) {

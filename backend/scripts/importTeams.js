@@ -3,7 +3,7 @@ import csvParser from "csv-parser";
 import mongoose from "mongoose";
 import Team from "../models/Team.js";
 
-const csvFilePath = "./teams.csv";
+const csvFilePath = "./Teams.csv";
 
 export async function importTeamsFromCSV() {
   const teamNames = [];

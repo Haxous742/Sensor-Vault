@@ -91,7 +91,6 @@ export const start = async (req, res) => {
 };
 
 
-
 export const stop = async (req, res) => {
   try {
     if (interval) {
@@ -108,3 +107,17 @@ export const stop = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+
+export const getTeams = async (req, res) => {
+  try {
+    const teams = [
+      { id: 1, name: "Team 1", members: ["Member 1", "Member 2"] },
+      { id: 2, name: "Team 2", members: ["Member 3", "Member 4"] },
+    ];
+    res.json(teams);
+  } catch (err) {
+    console.error("Get teams error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+}

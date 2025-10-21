@@ -6,7 +6,7 @@ let io; // to hold the socket instance
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: ["http://localhost:5173","https://www.sensorvault.live"],
       methods: ["GET", "POST"],
       credentials: true,
     },

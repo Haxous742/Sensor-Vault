@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000", { withCredentials: true });
+const socket = io(import.meta.env.VITE_BACKEND_URL, { withCredentials: true });
 
 const Dashboard = () => {
   const [timer, setTimer] = useState(0);
