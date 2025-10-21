@@ -52,7 +52,6 @@ export const login = async (req, res) => {
 }
 
 
-
 export const verify = async (req, res) => {
   const token = req.cookies.auth_token;
 
@@ -64,4 +63,12 @@ export const verify = async (req, res) => {
   } catch (err) {
     return res.status(401).json({ valid: false });
   }
+}
+
+
+export const start = async (req, res) => {
+}
+
+export const stop = async (req, res) => {
+
 }

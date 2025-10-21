@@ -2,7 +2,7 @@ import React from 'react'
 
 const Dashboard = () => {
   return (
-    <div>New Fukcing Dashinggboard</div>
+    <div className='text-center mt-20 text-slate-500'>New Fukcing Dashinggboard</div>
   )
 }
 
