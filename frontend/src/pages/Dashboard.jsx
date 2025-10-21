@@ -8,12 +8,14 @@ const Dashboard = () => {
   const [timer, setTimer] = useState(0);
   const [selectedTeam, setSelectedTeam] = useState("");
   const [teams, setTeams] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredTeams, setFilteredTeams] = useState([]);
 
   // Fetch teams from backend
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const res = await fetch('/api/getTeams');
+        const res = await fetch("/api/getTeams");
         const data = await res.json();
         setTeams(data);
       } catch (error) {
@@ -34,21 +36,57 @@ const Dashboard = () => {
     };
   }, []);
 
+  // Send selected team when starting timer
   const handleStart = async () => {
-    await fetch('/api/start', {
-      method: "POST",
-      credentials: "include",
-    });
+    if (!selectedTeam) return;
+    try {
+      await fetch("/api/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ team: selectedTeam }),
+      });
+    } catch (error) {
+      console.error("Failed to start timer:", error);
+    }
   };
 
   const handleStop = async () => {
-    await fetch('/api/stop', {
-      method: "POST",
-      credentials: "include",
-    });
+    try {
+      await fetch("/api/stop", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Failed to stop timer:", error);
+    }
   };
 
   const formatTime = (time) => String(time).padStart(4, "0");
+
+  // Filter team suggestions as user types
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSelectedTeam(value);
+    if (value.trim() === "") {
+      setShowSuggestions(false);
+      setFilteredTeams([]);
+      return;
+    }
+    const filtered = teams.filter((team) =>
+      team.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredTeams(filtered);
+    setShowSuggestions(true);
+  };
+
+  // When user selects a suggestion
+  const handleSuggestionClick = (team) => {
+    setSelectedTeam(team);
+    setShowSuggestions(false);
+  };
+
+  const isValidTeam = teams.includes(selectedTeam);
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-50 text-gray-800 p-8">
@@ -59,32 +97,48 @@ const Dashboard = () => {
       <div className="flex space-x-4 mb-6">
         <button
           onClick={handleStart}
-          className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow"
+          disabled={!isValidTeam}
+          className={`px-6 py-2 rounded-lg shadow transition-all transform active:scale-95 ${
+            isValidTeam
+              ? "bg-green-500 text-white hover:bg-green-600"
+              : "bg-gray-300 text-gray-600 cursor-not-allowed"
+          }`}
         >
           Start
         </button>
+
         <button
           onClick={handleStop}
-          className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 shadow"
+          className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 shadow active:scale-95 transition-all transform"
         >
           Stop
         </button>
       </div>
 
-      <div className="mb-10 w-64">
-        <select
+      <div className="relative mb-10 w-64">
+        <input
+          type="text"
           value={selectedTeam}
-          onChange={(e) => setSelectedTeam(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-400 h-36 overflow-y-auto"
-          size={6} // shows 6 items at a time, scrollable if more
-        >
-          {teams.length === 0 && <option value="">No Teams Available</option>}
-          {teams.map((team, index) => (
-            <option key={index} value={team}>
-              {team}
-            </option>
-          ))}
-        </select>
+          onChange={handleInputChange}
+          placeholder="Enter or select a team..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-400"
+          onFocus={() => selectedTeam && setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+        />
+
+        {showSuggestions && filteredTeams.length > 0 && (
+          <ul className="absolute z-10 w-full mt-1 max-h-40 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg">
+            {filteredTeams.map((team, index) => (
+              <li
+                key={index}
+                onClick={() => handleSuggestionClick(team)}
+                className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+              >
+                {team}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
@@ -94,7 +148,7 @@ const Dashboard = () => {
             className="bg-white p-6 rounded-2xl shadow flex flex-col items-center justify-center border border-gray-200"
           >
             <h2 className="text-xl font-semibold mb-4">Task {task}</h2>
-            <button className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+            <button className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:scale-95 transition-all transform">
               Action
             </button>
           </div>

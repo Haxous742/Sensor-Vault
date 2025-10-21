@@ -23,6 +23,7 @@ export const test = async (req, res) => {
   }
 };
 
+//=====================================================================================================================================
 
 export const login = async (req, res) => {
   try {
@@ -66,6 +67,7 @@ export const verify = async (req, res) => {
   }
 }
 
+//=====================================================================================================================================
 
 /////////////////////////////////////
 let timerValue = 0;
@@ -74,23 +76,32 @@ let interval = null;
 
 export const start = async (req, res) => {
   try {
+    const { team } = req.body;
+
+    if (!team) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Team name is required" });
+    }
+
     if (interval) {
       return res.json({ success: false, message: "Timer already running" });
     }
 
+    console.log(`⏱ Timer started for team: ${team}`);
+
     const io = getIO();
     interval = setInterval(() => {
       timerValue++;
-      io.emit("timer_update", { time: timerValue });
+      io.emit("timer_update", { time: timerValue, team });
     }, 1000);
 
-    res.json({ success: true, message: "Timer started" });
+    res.json({ success: true, message: `Timer started for team ${team}` });
   } catch (err) {
     console.error("Start error:", err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
 
 export const stop = async (req, res) => {
   try {
@@ -109,6 +120,7 @@ export const stop = async (req, res) => {
   }
 };
 
+//=====================================================================================================================================
 
 export const getTeams = async (req, res) => {
  try {
