@@ -1,6 +1,5 @@
 import fs from "fs";
 import csvParser from "csv-parser";
-import mongoose from "mongoose";
 import Team from "../models/Team.js";
 
 const csvFilePath = "./Teams.csv";
