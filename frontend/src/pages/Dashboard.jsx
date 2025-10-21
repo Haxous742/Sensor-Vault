@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
+import EditTaskModal from "../components/EditTaskModal.jsx";
 
 const socket = io("/", { withCredentials: true });
 
@@ -9,6 +10,7 @@ const Dashboard = () => {
   const [teams, setTeams] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredTeams, setFilteredTeams] = useState([]);
+  const [editTask, setEditTask] = useState(null);
 
   // Fetch teams
   useEffect(() => {
@@ -26,12 +28,8 @@ const Dashboard = () => {
 
   // Listen for backend time updates
   useEffect(() => {
-    socket.on("timer_update", (data) => {
-      setTimer(data.time);
-    });
-    return () => {
-      socket.off("timer_update");
-    };
+    socket.on("timer_update", (data) => setTimer(data.time));
+    return () => socket.off("timer_update");
   }, []);
 
   const handleStart = async () => {
@@ -93,7 +91,21 @@ const Dashboard = () => {
     setShowSuggestions(false);
   };
 
-  const isValidTeam = teams.includes(selectedTeam);
+  const handleDone = async (taskNumber) => {
+    if (!selectedTeam) return;
+    try {
+      await fetch(`/api/task${taskNumber}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ team: selectedTeam }),
+      });
+    } catch (error) {
+      console.error(`Failed to mark task${taskNumber} as done:`, error);
+    }
+  };
+
+  const isValidTeam = selectedTeam.trim() !== "";
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-50 text-gray-800 p-8">
@@ -155,12 +167,38 @@ const Dashboard = () => {
             className="bg-white p-6 rounded-2xl shadow flex flex-col items-center justify-center border border-gray-200"
           >
             <h2 className="text-xl font-semibold mb-4">Task {task}</h2>
-            <button className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:scale-95 transition-all transform">
-              Action
-            </button>
+
+            <div className="flex space-x-4">
+              <button
+                onClick={() => isValidTeam && setEditTask(task)}
+                disabled={!isValidTeam}
+                className={`px-5 py-2 rounded-lg text-white active:scale-95 transition-all transform ${
+                  isValidTeam
+                    ? "bg-blue-500 hover:bg-blue-600"
+                    : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                }`}
+              >
+                Edit
+              </button>
+
+              <button
+                onClick={() => handleDone(task)}
+                className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 active:scale-95 transition-all transform"
+              >
+                Done!
+              </button>
+            </div>
           </div>
         ))}
       </div>
+
+      {editTask && (
+        <EditTaskModal
+          taskNumber={editTask}
+          team={selectedTeam}
+          onClose={() => setEditTask(null)}
+        />
+      )}
     </div>
   );
 };

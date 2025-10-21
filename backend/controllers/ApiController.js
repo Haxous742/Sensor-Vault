@@ -53,7 +53,6 @@ export const login = async (req, res) => {
   }
 }
 
-
 export const verify = async (req, res) => {
   const token = req.cookies.auth_token;
 
@@ -127,6 +126,7 @@ export const start = async (req, res) => {
         sessionStart = null;
 
         existingTeam.timeTaken = MAX_DURATION;
+        existingTeam.isDone = true;
         existingTeam.current = false;
         await existingTeam.save();
 
@@ -184,7 +184,6 @@ export const stop = async (req, res) => {
   }
 };
 
-
 //=====================================================================================================================================
 
 export const getTeams = async (req, res) => {
@@ -197,3 +196,110 @@ export const getTeams = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch teams" });
   }
 }
+
+//=====================================================================================================================================
+
+export const task1 = async (req, res) => {
+
+}
+
+export const task2 = async (req, res) => {
+
+}
+
+export const task3 = async (req, res) => {
+
+}
+
+export const task4 = async (req, res) => {
+  
+}
+
+//=====================================================================================================================================
+
+export const task1edit = async (req, res) => {
+  try {
+    const { team, text } = req.body;
+
+    if (!team || !text)
+      return res.status(400).json({ message: "Missing team name or text input" });
+
+    const foundTeam = await Team.findOne({ name: team });
+    if (!foundTeam)
+      return res.status(404).json({ message: `Team '${team}' not found` });
+
+    foundTeam.task1CorrectAnswer = text;
+    await foundTeam.save();
+
+    res.status(200).json({ message: "Task 1 answer updated successfully" });
+  } catch (error) {
+    console.error("Error updating task1:", error);
+    res.status(500).json({ message: "Server error updating task 1" });
+  }
+};
+
+export const task2edit = async (req, res) => {
+  try {
+    const { team, text } = req.body;
+
+    if (!team || !text)
+      return res.status(400).json({ message: "Missing team name or text input" });
+
+    const foundTeam = await Team.findOne({ name: team });
+    if (!foundTeam)
+      return res.status(404).json({ message: `Team '${team}' not found` });
+
+    foundTeam.task2CorrectAnswer = text;
+    await foundTeam.save();
+
+    res.status(200).json({ message: "Task 2 answer updated successfully" });
+  } catch (error) {
+    console.error("Error updating task2:", error);
+    res.status(500).json({ message: "Server error updating task 2" });
+  }
+};
+
+export const task3edit = async (req, res) => {
+  try {
+    const { team, text } = req.body;
+
+    if (!team || !text)
+      return res.status(400).json({ message: "Missing team name or text input" });
+
+    const foundTeam = await Team.findOne({ name: team });
+    if (!foundTeam)
+      return res.status(404).json({ message: `Team '${team}' not found` });
+
+    foundTeam.task3CorrectAnswer = text;
+    await foundTeam.save();
+
+    res.status(200).json({ message: "Task 3 answer updated successfully" });
+  } catch (error) {
+    console.error("Error updating task3:", error);
+    res.status(500).json({ message: "Server error updating task 3" });
+  }
+};
+
+export const task4edit = async (req, res) => {
+  try {
+    const { team, text } = req.body;
+
+    if (!team || !text)
+      return res.status(400).json({ message: "Missing team name or text input" });
+
+    const foundTeam = await Team.findOne({ name: team });
+    if (!foundTeam)
+      return res.status(404).json({ message: `Team '${team}' not found` });
+
+    foundTeam.task4CorrectAnswer = text;
+    await foundTeam.save();
+
+    res.status(200).json({ message: "Task 4 answer updated successfully" });
+  } catch (error) {
+    console.error("Error updating task4:", error);
+    res.status(500).json({ message: "Server error updating task 4" });
+  }
+};
+
+
+//=====================================================================================================================================

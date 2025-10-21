@@ -5,6 +5,14 @@ import { verify } from "../controllers/ApiController.js";
 import { start } from "../controllers/ApiController.js";
 import { stop } from "../controllers/ApiController.js";
 import { getTeams } from "../controllers/ApiController.js";
+import { task1 } from "../controllers/ApiController.js";
+import { task2 } from "../controllers/ApiController.js";
+import { task3 } from "../controllers/ApiController.js";
+import { task4 } from "../controllers/ApiController.js";
+import { task1edit } from "../controllers/ApiController.js";
+import { task2edit } from "../controllers/ApiController.js";
+import { task3edit } from "../controllers/ApiController.js";
+import { task4edit } from "../controllers/ApiController.js";
 
 const ApiRouter = express.Router();
 
@@ -27,5 +35,21 @@ ApiRouter.post("/start", start);
 ApiRouter.post("/stop", stop);
 
 ApiRouter.get("/getTeams", getTeams);
+
+ApiRouter.post("/task1", task1);
+
+ApiRouter.post("/task2", task2);
+
+ApiRouter.post("/task3", task3);
+
+ApiRouter.post("/task4", task4);
+
+ApiRouter.post("/task1/edit", task1edit);
+
+ApiRouter.post("/task2/edit", task2edit);
+
+ApiRouter.post("/task3/edit", task3edit);
+
+ApiRouter.post("/task4/edit", task4edit);
 
 export default ApiRouter;
