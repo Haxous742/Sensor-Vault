@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
 // Initialize socket with backend URL from environment variable
-const socket = io(import.meta.env.VITE_BACKEND_URL, { withCredentials: true });
+const socket = io("/", { withCredentials: true });
 
 const Dashboard = () => {
   const [timer, setTimer] = useState(0);
