@@ -20,14 +20,14 @@ const Dashboard = () => {
   }, []);
 
   const handleStart = async () => {
-    await fetch("/api/start", {
+    await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/start`, {
       method: "POST",
       credentials: "include",
     });
   };
 
   const handleStop = async () => {
-    await fetch("/api/stop", {
+    await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/stop`, {
       method: "POST",
       credentials: "include",
     });
