@@ -48,6 +48,7 @@ const teamSchema = new Schema(
 
     startedAt: { type: Date },
     current: {type: Boolean, default: false},
+    lastTaskEndTime: { type: Date },
 
   },
   

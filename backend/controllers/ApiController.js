@@ -200,20 +200,130 @@ export const getTeams = async (req, res) => {
 //=====================================================================================================================================
 
 export const task1 = async (req, res) => {
+  try {
+    const { team } = req.body;
+    if (!team) return res.status(400).json({ message: "Team name is required" });
 
-}
+    const existingTeam = await Team.findOne({ name: team });
+    if (!existingTeam)
+      return res.status(404).json({ message: `Team '${team}' not found` });
+
+    // Calculate time from start to now
+    const now = new Date();
+    const startTime = existingTeam.startedAt;
+    if (!startTime) return res.status(400).json({ message: "Session not started" });
+
+    const elapsedTime = Math.floor((now - startTime) / 1000); // seconds
+
+    existingTeam.task1Done = true;
+    existingTeam.task1timeTaken = elapsedTime;
+    existingTeam.lastTaskEndTime = now; // mark end time for next interval
+    await existingTeam.save();
+
+    res.status(200).json({
+      message: "Task 1 marked as done",
+      timeTaken: elapsedTime,
+    });
+  } catch (error) {
+    console.error("Error updating task1:", error);
+    res.status(500).json({ message: "Server error updating task 1" });
+  }
+};
 
 export const task2 = async (req, res) => {
+  try {
+    const { team } = req.body;
+    if (!team) return res.status(400).json({ message: "Team name is required" });
 
-}
+    const existingTeam = await Team.findOne({ name: team });
+    if (!existingTeam)
+      return res.status(404).json({ message: `Team '${team}' not found` });
+
+    if (!existingTeam.task1Done)
+      return res.status(400).json({ message: "Task 1 must be completed first" });
+
+    const now = new Date();
+    const lastEnd = existingTeam.lastTaskEndTime || existingTeam.startedAt;
+    const elapsedTime = Math.floor((now - lastEnd) / 1000);
+
+    existingTeam.task2Done = true;
+    existingTeam.task2timeTaken = elapsedTime;
+    existingTeam.lastTaskEndTime = now;
+    await existingTeam.save();
+
+    res.status(200).json({
+      message: "Task 2 marked as done",
+      timeTaken: elapsedTime,
+    });
+  } catch (error) {
+    console.error("Error updating task2:", error);
+    res.status(500).json({ message: "Server error updating task 2" });
+  }
+};
 
 export const task3 = async (req, res) => {
+  try {
+    const { team } = req.body;
+    if (!team) return res.status(400).json({ message: "Team name is required" });
 
-}
+    const existingTeam = await Team.findOne({ name: team });
+    if (!existingTeam)
+      return res.status(404).json({ message: `Team '${team}' not found` });
+
+    if (!existingTeam.task2Done)
+      return res.status(400).json({ message: "Task 2 must be completed first" });
+
+    const now = new Date();
+    const lastEnd = existingTeam.lastTaskEndTime || existingTeam.startedAt;
+    const elapsedTime = Math.floor((now - lastEnd) / 1000);
+
+    existingTeam.task3Done = true;
+    existingTeam.task3timeTaken = elapsedTime;
+    existingTeam.lastTaskEndTime = now;
+    await existingTeam.save();
+
+    res.status(200).json({
+      message: "Task 3 marked as done",
+      timeTaken: elapsedTime,
+    });
+  } catch (error) {
+    console.error("Error updating task3:", error);
+    res.status(500).json({ message: "Server error updating task 3" });
+  }
+};
 
 export const task4 = async (req, res) => {
-  
-}
+  try {
+    const { team } = req.body;
+    if (!team) return res.status(400).json({ message: "Team name is required" });
+
+    const existingTeam = await Team.findOne({ name: team });
+    if (!existingTeam)
+      return res.status(404).json({ message: `Team '${team}' not found` });
+
+    if (!existingTeam.task3Done)
+      return res.status(400).json({ message: "Task 3 must be completed first" });
+
+    const now = new Date();
+    const lastEnd = existingTeam.lastTaskEndTime || existingTeam.startedAt;
+    const elapsedTime = Math.floor((now - lastEnd) / 1000);
+
+    existingTeam.task4Done = true;
+    existingTeam.task4timeTaken = elapsedTime;
+    existingTeam.lastTaskEndTime = now;
+    existingTeam.isDone = true;
+    existingTeam.result = true;
+    await existingTeam.save();
+
+    res.status(200).json({
+      message: "Task 4 marked as done",
+      timeTaken: elapsedTime,
+    });
+  } catch (error) {
+    console.error("Error updating task4:", error);
+    res.status(500).json({ message: "Server error updating task 4" });
+  }
+};
 
 //=====================================================================================================================================
 
@@ -301,5 +411,24 @@ export const task4edit = async (req, res) => {
   }
 };
 
-
 //=====================================================================================================================================
+
+export const teamProgress = async (req, res) => {
+  try {
+    const { team } = req.query;
+    if (!team) return res.status(400).json({ message: "Team name required" });
+
+    const foundTeam = await Team.findOne({ name: team });
+    if (!foundTeam) return res.status(404).json({ message: "Team not found" });
+
+    res.json({
+      task1Done: foundTeam.task1Done,
+      task2Done: foundTeam.task2Done,
+      task3Done: foundTeam.task3Done,
+      task4Done: foundTeam.task4Done,
+    });
+  } catch (err) {
+    console.error("Error fetching team progress:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

@@ -13,6 +13,7 @@ import { task1edit } from "../controllers/ApiController.js";
 import { task2edit } from "../controllers/ApiController.js";
 import { task3edit } from "../controllers/ApiController.js";
 import { task4edit } from "../controllers/ApiController.js";
+import { teamProgress } from "../controllers/ApiController.js";
 
 const ApiRouter = express.Router();
 
@@ -51,5 +52,7 @@ ApiRouter.post("/task2/edit", task2edit);
 ApiRouter.post("/task3/edit", task3edit);
 
 ApiRouter.post("/task4/edit", task4edit);
+
+ApiRouter.get("/teamProgress", teamProgress);
 
 export default ApiRouter;

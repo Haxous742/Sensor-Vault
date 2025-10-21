@@ -11,6 +11,12 @@ const Dashboard = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredTeams, setFilteredTeams] = useState([]);
   const [editTask, setEditTask] = useState(null);
+  const [taskStatus, setTaskStatus] = useState({
+    task1Done: false,
+    task2Done: false,
+    task3Done: false,
+    task4Done: false,
+  });
 
   // Fetch teams
   useEffect(() => {
@@ -31,6 +37,29 @@ const Dashboard = () => {
     socket.on("timer_update", (data) => setTimer(data.time));
     return () => socket.off("timer_update");
   }, []);
+
+  // Fetch team progress when team changes
+  useEffect(() => {
+    if (!selectedTeam) return;
+
+    const fetchProgress = async () => {
+      try {
+        const res = await fetch(`/api/teamProgress?team=${selectedTeam}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setTaskStatus({
+          task1Done: data.task1Done,
+          task2Done: data.task2Done,
+          task3Done: data.task3Done,
+          task4Done: data.task4Done,
+        });
+      } catch (error) {
+        console.error("Failed to fetch team progress:", error);
+      }
+    };
+
+    fetchProgress();
+  }, [selectedTeam]);
 
   const handleStart = async () => {
     if (!selectedTeam) return;
@@ -57,6 +86,28 @@ const Dashboard = () => {
       });
     } catch (error) {
       console.error("Failed to stop timer:", error);
+    }
+  };
+
+  const handleDone = async (taskNumber) => {
+    if (!selectedTeam) return;
+    try {
+      const res = await fetch(`/api/task${taskNumber}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ team: selectedTeam }),
+      });
+
+      if (res.ok) {
+        // Refresh progress state
+        setTaskStatus((prev) => ({
+          ...prev,
+          [`task${taskNumber}Done`]: true,
+        }));
+      }
+    } catch (error) {
+      console.error(`Failed to mark task${taskNumber} as done:`, error);
     }
   };
 
@@ -91,21 +142,15 @@ const Dashboard = () => {
     setShowSuggestions(false);
   };
 
-  const handleDone = async (taskNumber) => {
-    if (!selectedTeam) return;
-    try {
-      await fetch(`/api/task${taskNumber}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ team: selectedTeam }),
-      });
-    } catch (error) {
-      console.error(`Failed to mark task${taskNumber} as done:`, error);
-    }
-  };
-
   const isValidTeam = selectedTeam.trim() !== "";
+
+  const isTaskDisabled = (task) => {
+    if (task === 1) return false;
+    if (task === 2) return !taskStatus.task1Done;
+    if (task === 3) return !taskStatus.task2Done;
+    if (task === 4) return !taskStatus.task3Done;
+    return true;
+  };
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-50 text-gray-800 p-8">
@@ -183,9 +228,14 @@ const Dashboard = () => {
 
               <button
                 onClick={() => handleDone(task)}
-                className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 active:scale-95 transition-all transform"
+                disabled={isTaskDisabled(task) || taskStatus[`task${task}Done`]}
+                className={`px-5 py-2 rounded-lg text-white active:scale-95 transition-all transform ${
+                  isTaskDisabled(task) || taskStatus[`task${task}Done`]
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-green-500 hover:bg-green-600"
+                }`}
               >
-                Done!
+                {taskStatus[`task${task}Done`] ? "Done ✓" : "Done!"}
               </button>
             </div>
           </div>
