@@ -52,7 +52,6 @@ export const login = async (req, res) => {
 }
 
 
-
 export const verify = async (req, res) => {
   const token = req.cookies.auth_token;
 
