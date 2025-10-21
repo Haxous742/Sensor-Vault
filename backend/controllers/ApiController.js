@@ -66,9 +66,45 @@ export const verify = async (req, res) => {
 }
 
 
+/////////////////////////////////////
+let timerValue = 0;
+let interval = null;
+////////////////////////////////////
+
 export const start = async (req, res) => {
-}
+  try {
+    if (interval) {
+      return res.json({ success: false, message: "Timer already running" });
+    }
+
+    const io = getIO();
+    interval = setInterval(() => {
+      timerValue++;
+      io.emit("timer_update", { time: timerValue });
+    }, 1000);
+
+    res.json({ success: true, message: "Timer started" });
+  } catch (err) {
+    console.error("Start error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
 
 export const stop = async (req, res) => {
+  try {
+    if (interval) {
+      clearInterval(interval);
+      interval = null;
+    }
 
-}
+    const io = getIO();
+    io.emit("timer_update", { time: timerValue });
+
+    res.json({ success: true, message: "Timer stopped", time: timerValue });
+  } catch (err) {
+    console.error("Stop error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};

@@ -9,6 +9,7 @@ import { initSocket } from "./socket/socket.js";
 import ApiRouter from "./routes/ApiRouter.js";
 import cookieParser from "cookie-parser";
 import IOTRouter from "./routes/IOTRouter.js";
+import cors from "cors";
 
 
 
@@ -31,7 +32,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/iot", IOTRouter);
 app.use("/api", ApiRouter);
 
-
+//cors policy
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true, // 👈 REQUIRED for cookies + socket credentials
+  })
+);
 
 
 // 🧩 Create HTTP server and init Socket.IO

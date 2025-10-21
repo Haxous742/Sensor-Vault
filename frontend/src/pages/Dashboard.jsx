@@ -1,53 +1,61 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:5000", { withCredentials: true });
 
 const Dashboard = () => {
   const [timer, setTimer] = useState(0);
-  const [running, setRunning] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState("");
   const teams = ["Team Alpha", "Team Bravo", "Team Charlie", "Team Delta"];
 
-  // Timer logic
-  React.useEffect(() => {
-    let interval;
-    if (running) {
-      interval = setInterval(() => {
-        setTimer((prev) => prev + 1);
-      }, 1000);
-    } else if (!running && interval) {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [running]);
+  useEffect(() => {
+    // Listen for timer updates from backend
+    socket.on("timer_update", (data) => {
+      setTimer(data.time);
+    });
 
-  // Helper to format 4-digit display
-  const formatTime = (time) => {
-    return String(time).padStart(4, "0");
+    return () => {
+      socket.off("timer_update");
+    };
+  }, []);
+
+  const handleStart = async () => {
+    await fetch("/api/start", {
+      method: "POST",
+      credentials: "include",
+    });
   };
+
+  const handleStop = async () => {
+    await fetch("/api/stop", {
+      method: "POST",
+      credentials: "include",
+    });
+  };
+
+  const formatTime = (time) => String(time).padStart(4, "0");
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-50 text-gray-800 p-8">
-      {/* Timer Section */}
       <div className="text-7xl font-mono font-bold mt-8 mb-4">
         {formatTime(timer)}
       </div>
 
-      {/* Start / Stop Buttons */}
       <div className="flex space-x-4 mb-6">
         <button
-          onClick={() => setRunning(true)}
+          onClick={handleStart}
           className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow"
         >
           Start
         </button>
         <button
-          onClick={() => setRunning(false)}
+          onClick={handleStop}
           className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 shadow"
         >
           Stop
         </button>
       </div>
 
-      {/* Dropdown for Teams */}
       <div className="mb-10">
         <select
           value={selectedTeam}
@@ -63,7 +71,6 @@ const Dashboard = () => {
         </select>
       </div>
 
-      {/* Task Sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
         {[1, 2, 3, 4].map((task) => (
           <div
