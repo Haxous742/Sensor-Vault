@@ -1,33 +1,47 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
+// Initialize socket with backend URL from environment variable
 const socket = io(import.meta.env.VITE_BACKEND_URL, { withCredentials: true });
 
 const Dashboard = () => {
   const [timer, setTimer] = useState(0);
   const [selectedTeam, setSelectedTeam] = useState("");
-  const teams = ["Team Alpha", "Team Bravo", "Team Charlie", "Team Delta"];
+  const [teams, setTeams] = useState([]);
 
+  // Fetch teams from backend
   useEffect(() => {
-    // Listen for timer updates from backend
+    const fetchTeams = async () => {
+      try {
+        const res = await fetch('/api/getTeams');
+        const data = await res.json();
+        setTeams(data);
+      } catch (error) {
+        console.error("Failed to fetch teams:", error);
+      }
+    };
+    fetchTeams();
+  }, []);
+
+  // Listen for timer updates from backend
+  useEffect(() => {
     socket.on("timer_update", (data) => {
       setTimer(data.time);
     });
-
     return () => {
       socket.off("timer_update");
     };
   }, []);
 
   const handleStart = async () => {
-    await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/start`, {
+    await fetch('/api/start', {
       method: "POST",
       credentials: "include",
     });
   };
 
   const handleStop = async () => {
-    await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/stop`, {
+    await fetch('/api/stop', {
       method: "POST",
       credentials: "include",
     });
@@ -56,13 +70,14 @@ const Dashboard = () => {
         </button>
       </div>
 
-      <div className="mb-10">
+      <div className="mb-10 w-64">
         <select
           value={selectedTeam}
           onChange={(e) => setSelectedTeam(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-400"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-400 h-36 overflow-y-auto"
+          size={6} // shows 6 items at a time, scrollable if more
         >
-          <option value="">Select a Team</option>
+          {teams.length === 0 && <option value="">No Teams Available</option>}
           {teams.map((team, index) => (
             <option key={index} value={team}>
               {team}

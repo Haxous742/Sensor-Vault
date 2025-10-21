@@ -2,6 +2,7 @@
 import { getIO } from "../socket/socket.js";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import Team from "../models/Team.js";
 dotenv.config();
 
 export const test = async (req, res) => {
@@ -110,14 +111,12 @@ export const stop = async (req, res) => {
 
 
 export const getTeams = async (req, res) => {
-  try {
-    const teams = [
-      { id: 1, name: "Team 1", members: ["Member 1", "Member 2"] },
-      { id: 2, name: "Team 2", members: ["Member 3", "Member 4"] },
-    ];
-    res.json(teams);
-  } catch (err) {
-    console.error("Get teams error:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+ try {
+    const teams = await Team.find({}, { name: 1, _id: 0 }); // only get name field
+    const teamNames = teams.map((team) => team.name); // array of names
+    res.status(200).json(teamNames);
+  } catch (error) {
+    console.error("Error fetching teams:", error);
+    res.status(500).json({ error: "Failed to fetch teams" });
   }
 }

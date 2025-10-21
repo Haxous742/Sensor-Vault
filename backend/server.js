@@ -36,7 +36,7 @@ app.use(
   cors({
     origin: ["http://localhost:5173","https://www.sensorvault.live"],
     methods: ["GET", "POST"],
-    credentials: true, // 👈 REQUIRED for cookies + socket credentials
+    credentials: true, //
   })
 );
 
