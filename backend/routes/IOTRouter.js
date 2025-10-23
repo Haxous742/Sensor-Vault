@@ -1,5 +1,15 @@
-
 import express from "express";
+
+
+
+import { taskArrowsController } from "../controllers/IOTController.js";
+import { taskDistanceController } from "../controllers/IOTController.js";
+import { taskMorseController } from "../controllers/IOTController.js";
+import { taskMagneticController } from "../controllers/IOTController.js";
+import { CheckAuthIOT } from "../middlewares/CheckAuthIOT.js";
+
+
+
 
 const IOTRouter = express.Router();
 
@@ -7,20 +17,12 @@ IOTRouter.get("/health", (req, res) => {
   res.json({ status: "IOT API is healthy" });
 });
 
-IOTRouter.post("/taskarrows", (req, res) => {
-  res.json({ status: "Task 1 is running" });
-});
+IOTRouter.post("/taskarrows", CheckAuthIOT, taskArrowsController);
 
-IOTRouter.post("/taskdistance", (req, res) => {
-  res.json({ status: "Task 2 is running" });
-});
+IOTRouter.post("/taskdistance", CheckAuthIOT, taskDistanceController);
 
-IOTRouter.post("/taskmorse", (req, res) => {
-  res.json({ status: "Task 3 is running" });
-});
+IOTRouter.post("/taskmorse", CheckAuthIOT, taskMorseController);
 
-IOTRouter.post("/taskmagnetic", (req, res) => {
-  res.json({ status: "Task 4 is running" });
-});
+IOTRouter.post("/taskmagnetic", CheckAuthIOT, taskMagneticController);
 
 export default IOTRouter;
