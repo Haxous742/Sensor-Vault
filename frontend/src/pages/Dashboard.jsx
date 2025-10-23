@@ -17,8 +17,9 @@ const Dashboard = () => {
     task3Done: false,
     task4Done: false,
   });
+  const [activeTeam, setActiveTeam] = useState(null); // 🔹 Track active timer team
 
-  // Fetch teams
+  // Fetch teams on load
   useEffect(() => {
     const fetchTeams = async () => {
       try {
@@ -32,13 +33,18 @@ const Dashboard = () => {
     fetchTeams();
   }, []);
 
-  // Listen for backend time updates
+  // Listen for timer updates
   useEffect(() => {
-    socket.on("timer_update", (data) => setTimer(data.time));
+    socket.on("timer_update", (data) => {
+      setTimer(data.time);
+      setActiveTeam(data.team); // 🔹 Identify which team's timer is active
+      setSelectedTeam(data.team); // 🔹 Automatically fill input with that team
+    });
+
     return () => socket.off("timer_update");
   }, []);
 
-  // Fetch team progress when team changes
+  // Fetch team progress when selected team changes
   useEffect(() => {
     if (!selectedTeam) return;
 
@@ -61,29 +67,39 @@ const Dashboard = () => {
     fetchProgress();
   }, [selectedTeam]);
 
+  // Start the timer
   const handleStart = async () => {
     if (!selectedTeam) return;
     try {
-      await fetch("/api/start", {
+      const res = await fetch("/api/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ team: selectedTeam }),
       });
+
+      if (res.ok) {
+        setActiveTeam(selectedTeam); // 🔹 Lock input after start
+      }
     } catch (error) {
       console.error("Failed to start timer:", error);
     }
   };
 
+  // Stop the timer
   const handleStop = async () => {
     if (!selectedTeam) return;
     try {
-      await fetch("/api/stop", {
+      const res = await fetch("/api/stop", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ team: selectedTeam }),
       });
+
+      if (res.ok) {
+        setActiveTeam(null); // 🔹 Unlock input after stop
+      }
     } catch (error) {
       console.error("Failed to stop timer:", error);
     }
@@ -100,7 +116,6 @@ const Dashboard = () => {
       });
 
       if (res.ok) {
-        // Refresh progress state
         setTaskStatus((prev) => ({
           ...prev,
           [`task${taskNumber}Done`]: true,
@@ -119,8 +134,8 @@ const Dashboard = () => {
     return `${minutes}:${seconds}`;
   };
 
-  // Handle input and suggestions
   const handleInputChange = (e) => {
+    if (activeTeam) return; // 🔹 Disable input when timer is active
     const value = e.target.value;
     setSelectedTeam(value);
 
@@ -138,12 +153,12 @@ const Dashboard = () => {
   };
 
   const handleSuggestionClick = (team) => {
+    if (activeTeam) return; // 🔹 Prevent switching when active
     setSelectedTeam(team);
     setShowSuggestions(false);
   };
 
   const isValidTeam = selectedTeam.trim() !== "";
-
   const isTaskDisabled = (task) => {
     if (task === 1) return false;
     if (task === 2) return !taskStatus.task1Done;
@@ -161,11 +176,11 @@ const Dashboard = () => {
       <div className="flex space-x-4 mb-6">
         <button
           onClick={handleStart}
-          disabled={!isValidTeam}
+          disabled={!isValidTeam || activeTeam} // 🔹 Can't start if no team OR already running
           className={`px-6 py-2 rounded-lg shadow transition-all transform active:scale-95 ${
-            isValidTeam
-              ? "bg-green-500 text-white hover:bg-green-600"
-              : "bg-gray-300 text-gray-600 cursor-not-allowed"
+            !isValidTeam || activeTeam
+              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+              : "bg-green-500 text-white hover:bg-green-600"
           }`}
         >
           Start
@@ -173,7 +188,12 @@ const Dashboard = () => {
 
         <button
           onClick={handleStop}
-          className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 shadow active:scale-95 transition-all transform"
+          disabled={!activeTeam} // 🔹 Stop only when timer active
+          className={`px-6 py-2 rounded-lg shadow transition-all transform active:scale-95 ${
+            activeTeam
+              ? "bg-red-500 text-white hover:bg-red-600"
+              : "bg-gray-300 text-gray-600 cursor-not-allowed"
+          }`}
         >
           Stop
         </button>
@@ -185,7 +205,12 @@ const Dashboard = () => {
           value={selectedTeam}
           onChange={handleInputChange}
           placeholder="Enter or select a team..."
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-400"
+          className={`w-full px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:ring-2 ${
+            activeTeam
+              ? "cursor-not-allowed bg-gray-100"
+              : "focus:ring-blue-400"
+          }`}
+          disabled={!!activeTeam} // 🔹 Disable input when timer active
           onFocus={() => selectedTeam && setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
         />
