@@ -69,6 +69,9 @@ const Dashboard = () => {
   const [activeTeam, setActiveTeam] = useState(null);
   const [showAllTasks, setShowAllTasks] = useState(true);
   const [currentTasks, setCurrentTasks] = useState([1]);
+  const [gameComplete, setGameComplete] = useState(false);
+  const [gameSuccess, setGameSuccess] = useState(false);
+  const [isTeamCompleted, setIsTeamCompleted] = useState(false);
   const confettiTimeoutRef = useRef(null);
 
   // Save selected team to localStorage whenever it changes
@@ -100,7 +103,6 @@ const Dashboard = () => {
     try {
       const confetti = (await import("canvas-confetti")).default;
       
-      // Enhanced confetti with multiple bursts
       const duration = 2000;
       const animationEnd = Date.now() + duration;
       const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
@@ -135,6 +137,46 @@ const Dashboard = () => {
     }
   };
 
+  const runVictoryConfetti = async () => {
+    try {
+      const confetti = (await import("canvas-confetti")).default;
+      
+      const duration = 4000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 120, zIndex: 9999 };
+
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 100 * (timeLeft / duration);
+        
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+          colors: ['#FFD700', '#FFA500', '#FF6347', '#00CED1', '#9370DB']
+        });
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+          colors: ['#FFD700', '#FFA500', '#FF6347', '#00CED1', '#9370DB']
+        });
+      }, 150);
+
+    } catch (err) {
+      console.warn("Confetti import failed or not installed:", err.message);
+    }
+  };
+
   useEffect(() => {
     const fetchTeams = async () => {
       try {
@@ -152,6 +194,20 @@ const Dashboard = () => {
     socket.on("timer_update", (data) => {
       setTimer(data.time);
       setActiveTeam(data.team);
+
+      // Check if timer reached 15 minutes (900 seconds)
+      if (data.time >= 900) {
+        // Check if all tasks are done
+        if (taskStatus.task1Done && taskStatus.task2Done && taskStatus.task3Done && taskStatus.task4Done) {
+          setGameSuccess(true);
+        } else {
+          setGameSuccess(false);
+        }
+        setGameComplete(true);
+        setActiveTeam(null);
+        setIsTeamCompleted(true);
+        return;
+      }
 
       if (data.team && selectedTeam && data.team === selectedTeam) {
         const next = getNextTaskFromStatus(taskStatus);
@@ -180,6 +236,7 @@ const Dashboard = () => {
         task3Done: false,
         task4Done: false,
       });
+      setIsTeamCompleted(false);
       return;
     }
 
@@ -196,16 +253,25 @@ const Dashboard = () => {
         };
         setTaskStatus(newStatus);
 
-        if (activeTeam && activeTeam === selectedTeam) {
-          const next = getNextTaskFromStatus(newStatus);
-          if (next) {
-            setShowAllTasks(false);
-            setCurrentTasks(Array.isArray(next) ? next : [next]);
+        // Check if team is completed (isDone = true)
+        if (data.isDone) {
+          setIsTeamCompleted(true);
+          setTimer(data.timeTaken || 0);
+          setShowAllTasks(true);
+        } else {
+          setIsTeamCompleted(false);
+          
+          if (activeTeam && activeTeam === selectedTeam) {
+            const next = getNextTaskFromStatus(newStatus);
+            if (next) {
+              setShowAllTasks(false);
+              setCurrentTasks(Array.isArray(next) ? next : [next]);
+            } else {
+              setShowAllTasks(true);
+            }
           } else {
             setShowAllTasks(true);
           }
-        } else {
-          setShowAllTasks(true);
         }
       } catch (error) {
         console.error("Failed to fetch team progress:", error);
@@ -223,7 +289,7 @@ const Dashboard = () => {
   }, [selectedTeam]);
 
   const handleStart = async () => {
-    if (!selectedTeam.trim()) return;
+    if (!selectedTeam.trim() || isTeamCompleted) return;
     try {
       const res = await fetch("/api/start", {
         method: "POST",
@@ -237,6 +303,7 @@ const Dashboard = () => {
         setCurrentTasks(Array.isArray(next) ? next : [next]);
         setShowAllTasks(false);
         setActiveTeam(selectedTeam);
+        setGameComplete(false);
       }
     } catch (error) {
       console.error("Failed to start timer:", error);
@@ -273,26 +340,42 @@ const Dashboard = () => {
       });
 
       if (res.ok) {
+        const responseData = await res.json();
+        
         setTaskStatus((prev) => {
           const updated = { ...prev, [`task${taskNumber}Done`]: true };
+          
+          // Check if this was task 4 (last task)
+          if (taskNumber === 4) {
+            // Show victory screen
+            setGameSuccess(true);
+            setGameComplete(true);
+            setIsTeamCompleted(true);
+            setTimer(responseData.totalTime || timer);
+            runVictoryConfetti();
+            return updated;
+          }
+          
           return updated;
         });
 
         runConfetti();
 
-        if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
-        confettiTimeoutRef.current = setTimeout(() => {
-          setTaskStatus((prev) => {
-            const next = getNextTaskFromStatus(prev);
-            if (next) {
-              setCurrentTasks(Array.isArray(next) ? next : [next]);
-              setShowAllTasks(false);
-            } else {
-              setShowAllTasks(true);
-            }
-            return prev;
-          });
-        }, 1000);
+        if (taskNumber !== 4) {
+          if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
+          confettiTimeoutRef.current = setTimeout(() => {
+            setTaskStatus((prev) => {
+              const next = getNextTaskFromStatus(prev);
+              if (next) {
+                setCurrentTasks(Array.isArray(next) ? next : [next]);
+                setShowAllTasks(false);
+              } else {
+                setShowAllTasks(true);
+              }
+              return prev;
+            });
+          }, 1000);
+        }
       }
     } catch (error) {
       console.error(`Failed to mark task${taskNumber} as done:`, error);
@@ -331,6 +414,11 @@ const Dashboard = () => {
     setShowSuggestions(false);
   };
 
+  const handleBackToDashboard = () => {
+    setGameComplete(false);
+    // Don't reset gameSuccess or isTeamCompleted - keep the completed state
+  };
+
   const isValidTeam = selectedTeam.trim() !== "";
   
   const isTaskDisabled = (task) => {
@@ -349,6 +437,55 @@ const Dashboard = () => {
     };
   }, []);
 
+  // Game Complete Screen
+  if (gameComplete) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 text-gray-800 p-8">
+        <div className="bg-white p-12 rounded-3xl shadow-2xl text-center max-w-2xl transform transition-all">
+          {gameSuccess ? (
+            <>
+              <div className="text-8xl mb-6">🎉</div>
+              <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                Congratulations!
+              </h1>
+              <p className="text-2xl text-gray-700 mb-6">
+                Team <span className="font-bold text-blue-600">{selectedTeam}</span> completed all tasks!
+              </p>
+              <div className="text-6xl font-mono font-bold mb-8 text-gray-800">
+                {formatTime(timer)}
+              </div>
+              <p className="text-lg text-gray-600 mb-8">
+                Amazing job! You've successfully completed all challenges.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="text-8xl mb-6">⏰</div>
+              <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                Time's Up!
+              </h1>
+              <p className="text-2xl text-gray-700 mb-6">
+                Better luck next time, <span className="font-bold text-blue-600">{selectedTeam}</span>!
+              </p>
+              <div className="text-6xl font-mono font-bold mb-8 text-gray-800">
+                15:00
+              </div>
+              <p className="text-lg text-gray-600 mb-8">
+                You ran out of time, but great effort! Try again to beat the clock.
+              </p>
+            </>
+          )}
+          <button
+            onClick={handleBackToDashboard}
+            className="px-10 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg font-semibold text-xl transform hover:scale-105"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 text-gray-800 p-8">
       <div className="text-8xl font-mono font-bold mt-12 mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent drop-shadow-lg">
@@ -358,9 +495,9 @@ const Dashboard = () => {
       <div className="flex space-x-4 mb-8">
         <button
           onClick={handleStart}
-          disabled={!isValidTeam || !!activeTeam}
+          disabled={!isValidTeam || !!activeTeam || isTeamCompleted}
           className={`px-8 py-3 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95 font-semibold text-lg ${
-            !isValidTeam || !!activeTeam
+            !isValidTeam || !!activeTeam || isTeamCompleted
               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
               : "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-green-500/50"
           }`}
@@ -370,9 +507,9 @@ const Dashboard = () => {
 
         <button
           onClick={handleStop}
-          disabled={!activeTeam}
+          disabled={!activeTeam || isTeamCompleted}
           className={`px-8 py-3 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95 font-semibold text-lg ${
-            activeTeam
+            activeTeam && !isTeamCompleted
               ? "bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-red-500/50"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
@@ -388,12 +525,12 @@ const Dashboard = () => {
           onChange={handleInputChange}
           placeholder="Enter or select a team..."
           className={`w-full px-6 py-4 border-2 border-gray-300 rounded-2xl bg-white shadow-lg focus:ring-4 text-lg font-medium transition-all ${
-            activeTeam
+            activeTeam || isTeamCompleted
               ? "cursor-not-allowed bg-gray-100 border-gray-300"
               : "focus:ring-blue-300 focus:border-blue-500 hover:border-blue-400"
           }`}
-          disabled={!!activeTeam}
-          onFocus={() => selectedTeam && setShowSuggestions(true)}
+          disabled={!!activeTeam || isTeamCompleted}
+          onFocus={() => selectedTeam && !isTeamCompleted && setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
         />
 
@@ -425,10 +562,10 @@ const Dashboard = () => {
 
               <div className="flex space-x-4">
                 <button
-                  onClick={() => isValidTeam && setEditTask(task)}
-                  disabled={!isValidTeam}
+                  onClick={() => isValidTeam && !isTeamCompleted && setEditTask(task)}
+                  disabled={!isValidTeam || isTeamCompleted}
                   className={`px-6 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold shadow-lg ${
-                    isValidTeam
+                    isValidTeam && !isTeamCompleted
                       ? "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
                       : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
@@ -438,9 +575,9 @@ const Dashboard = () => {
 
                 <button
                   onClick={() => handleDone(task)}
-                  disabled={isTaskDisabled(task) || taskStatus[`task${task}Done`]}
+                  disabled={isTaskDisabled(task) || taskStatus[`task${task}Done`] || isTeamCompleted}
                   className={`px-6 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold shadow-lg ${
-                    isTaskDisabled(task) || taskStatus[`task${task}Done`]
+                    isTaskDisabled(task) || taskStatus[`task${task}Done`] || isTeamCompleted
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                   }`}

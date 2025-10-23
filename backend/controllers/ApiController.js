@@ -240,10 +240,10 @@ export const task2 = async (req, res) => {
     if (!existingTeam)
       return res.status(404).json({ message: `Team '${team}' not found` });
 
-    if (!existingTeam.task1Done)
-      return res.status(400).json({ message: "Task 1 must be completed first" });
+    // REMOVED: Task 1 requirement check
 
     const now = new Date();
+    // Use the later of task1EndTime or startedAt as the base
     const lastEnd = existingTeam.lastTaskEndTime || existingTeam.startedAt;
     const elapsedTime = Math.floor((now - lastEnd) / 1000);
 
@@ -272,8 +272,9 @@ export const task3 = async (req, res) => {
     if (!existingTeam)
       return res.status(404).json({ message: `Team '${team}' not found` });
 
-    if (!existingTeam.task2Done)
-      return res.status(400).json({ message: "Task 2 must be completed first" });
+    // Require BOTH task1 and task2
+    if (!existingTeam.task1Done || !existingTeam.task2Done)
+      return res.status(400).json({ message: "Tasks 1 and 2 must be completed first" });
 
     const now = new Date();
     const lastEnd = existingTeam.lastTaskEndTime || existingTeam.startedAt;
@@ -311,17 +312,36 @@ export const task4 = async (req, res) => {
     const lastEnd = existingTeam.lastTaskEndTime || existingTeam.startedAt;
     const elapsedTime = Math.floor((now - lastEnd) / 1000);
 
+    // ✅ Calculate total time from session
+    const sessionElapsed = sessionStart ? Math.floor((now - sessionStart) / 1000) : 0;
+    const totalTime = (existingTeam.timeTaken || 0) + sessionElapsed;
+
     existingTeam.task4Done = true;
     existingTeam.task4timeTaken = elapsedTime;
     existingTeam.lastTaskEndTime = now;
     existingTeam.task4CurrentAnswer = existingTeam.task4CorrectAnswer;
     existingTeam.isDone = true;
     existingTeam.result = true;
+    existingTeam.current = false;
+    existingTeam.timeTaken = totalTime;  // ✅ Save final time
     await existingTeam.save();
 
+    // Clear the timer interval
+    if (interval && activeTeam === team) {
+      clearInterval(interval);
+      interval = null;
+      activeTeam = null;
+      sessionStart = null;
+    }
+
+    const io = getIO();
+    io.emit("timer_update", { team, time: totalTime });  // ✅ Emit final time
+
     res.status(200).json({
-      message: "Task 4 marked as done",
+      success: true,  // ✅ Add success flag
+      message: "Task 4 marked as done - Game completed!",
       timeTaken: elapsedTime,
+      totalTime: totalTime,  // ✅ Return total time
     });
   } catch (error) {
     console.error("Error updating task4:", error);
@@ -430,6 +450,8 @@ export const teamProgress = async (req, res) => {
       task2Done: foundTeam.task2Done,
       task3Done: foundTeam.task3Done,
       task4Done: foundTeam.task4Done,
+      isDone: foundTeam.isDone,        // ✅ Add this
+      timeTaken: foundTeam.timeTaken,  // ✅ Add this
     });
   } catch (err) {
     console.error("Error fetching team progress:", err);
