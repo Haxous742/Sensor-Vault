@@ -218,6 +218,7 @@ export const task1 = async (req, res) => {
     existingTeam.task1Done = true;
     existingTeam.task1timeTaken = elapsedTime;
     existingTeam.lastTaskEndTime = now; // mark end time for next interval
+    existingTeam.task1CurrentAnswer = existingTeam.task1CorrectAnswer;
     await existingTeam.save();
 
     res.status(200).json({
@@ -249,6 +250,7 @@ export const task2 = async (req, res) => {
     existingTeam.task2Done = true;
     existingTeam.task2timeTaken = elapsedTime;
     existingTeam.lastTaskEndTime = now;
+    existingTeam.task2CurrentAnswer = existingTeam.task2CorrectAnswer;
     await existingTeam.save();
 
     res.status(200).json({
@@ -280,6 +282,7 @@ export const task3 = async (req, res) => {
     existingTeam.task3Done = true;
     existingTeam.task3timeTaken = elapsedTime;
     existingTeam.lastTaskEndTime = now;
+    existingTeam.task3CurrentAnswer = existingTeam.task3CorrectAnswer;
     await existingTeam.save();
 
     res.status(200).json({
@@ -311,6 +314,7 @@ export const task4 = async (req, res) => {
     existingTeam.task4Done = true;
     existingTeam.task4timeTaken = elapsedTime;
     existingTeam.lastTaskEndTime = now;
+    existingTeam.task4CurrentAnswer = existingTeam.task4CorrectAnswer;
     existingTeam.isDone = true;
     existingTeam.result = true;
     await existingTeam.save();
