@@ -1,12 +1,61 @@
 import React, { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
-import EditTaskModal from "../components/EditTaskModal.jsx";
 
 const socket = io("/", { withCredentials: true });
 
+// Mock EditTaskModal component
+const EditTaskModal = ({ taskNumber, team, onClose }) => {
+  const [text, setText] = useState("");
+
+  const handleSubmit = async () => {
+    try {
+      await fetch(`/api/task${taskNumber}edit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ team, text }),
+      });
+      onClose();
+    } catch (error) {
+      console.error("Failed to update task:", error);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+      <div className="bg-white p-8 rounded-3xl shadow-2xl w-96 transform transition-all">
+        <h3 className="text-2xl font-bold mb-6 text-gray-800">Edit Task {taskNumber}</h3>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="w-full p-4 border-2 border-gray-200 rounded-xl mb-6 focus:border-blue-500 focus:outline-none transition-colors resize-none"
+          rows="5"
+          placeholder="Enter task details..."
+        />
+        <div className="flex justify-end space-x-3">
+          <button 
+            onClick={onClose} 
+            className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleSubmit} 
+            className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg font-medium"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const [timer, setTimer] = useState(0);
-  const [selectedTeam, setSelectedTeam] = useState("");
+  const [selectedTeam, setSelectedTeam] = useState(() => {
+    return localStorage.getItem("selectedTeam") || "";
+  });
   const [teams, setTeams] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredTeams, setFilteredTeams] = useState([]);
@@ -17,18 +66,32 @@ const Dashboard = () => {
     task3Done: false,
     task4Done: false,
   });
-  const [activeTeam, setActiveTeam] = useState(null); // which team currently running (from socket)
-  const [showAllTasks, setShowAllTasks] = useState(true); // initial: show all 4
-  const [currentTask, setCurrentTask] = useState(1); // 1..4 - which task to show when single-task view active
+  const [activeTeam, setActiveTeam] = useState(null);
+  const [showAllTasks, setShowAllTasks] = useState(true);
+  const [currentTasks, setCurrentTasks] = useState([1]);
   const confettiTimeoutRef = useRef(null);
 
-  // —— Helpers —— //
+  // Save selected team to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedTeam) {
+      localStorage.setItem("selectedTeam", selectedTeam);
+    } else {
+      localStorage.removeItem("selectedTeam");
+    }
+  }, [selectedTeam]);
+
   const getNextTaskFromStatus = (status) => {
-    if (!status) return 1;
-    if (!status.task1Done) return 1;
-    if (status.task1Done && !status.task2Done) return 2;
-    if (status.task2Done && !status.task3Done) return 3;
-    if (status.task3Done && !status.task4Done) return 4;
+    if (!status) return [1, 2];
+
+    // First phase: show 1 and 2 together until both done
+    if (!status.task1Done || !status.task2Done) return [1, 2];
+
+    // Then task 3
+    if (!status.task3Done) return [3];
+
+    // Then task 4
+    if (!status.task4Done) return [4];
+
     // all done
     return null;
   };
@@ -36,17 +99,42 @@ const Dashboard = () => {
   const runConfetti = async () => {
     try {
       const confetti = (await import("canvas-confetti")).default;
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.6 },
-      });
+      
+      // Enhanced confetti with multiple bursts
+      const duration = 2000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+        
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+        });
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+        });
+      }, 250);
+
     } catch (err) {
       console.warn("Confetti import failed or not installed:", err.message);
     }
   };
 
-  // —— Fetch teams on load —— //
   useEffect(() => {
     const fetchTeams = async () => {
       try {
@@ -60,26 +148,20 @@ const Dashboard = () => {
     fetchTeams();
   }, []);
 
-  // —— Socket: listen for timer updates —— //
   useEffect(() => {
     socket.on("timer_update", (data) => {
       setTimer(data.time);
       setActiveTeam(data.team);
 
-      // If the timer update is for the currently selected team, switch to single-task view
       if (data.team && selectedTeam && data.team === selectedTeam) {
-        // compute next task from current stored status
         const next = getNextTaskFromStatus(taskStatus);
         if (next) {
           setShowAllTasks(false);
-          setCurrentTask(next);
+          setCurrentTasks(Array.isArray(next) ? next : [next]);
         } else {
-          // all tasks done -> show all tasks
           setShowAllTasks(true);
         }
       } else {
-        // timer update is for other team -> unlock and show all
-        // keep input locked when *any* other team is active (existing behavior)
         setShowAllTasks(true);
       }
     });
@@ -87,13 +169,10 @@ const Dashboard = () => {
     return () => {
       socket.off("timer_update");
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTeam, taskStatus]);
 
-  // —— When selectedTeam changes, fetch its progress and compute current task —— //
   useEffect(() => {
     if (!selectedTeam) {
-      // no selection -> show all
       setShowAllTasks(true);
       setTaskStatus({
         task1Done: false,
@@ -107,10 +186,7 @@ const Dashboard = () => {
     const fetchProgress = async () => {
       try {
         const res = await fetch(`/api/teamProgress?team=${encodeURIComponent(selectedTeam)}`);
-        if (!res.ok) {
-          // server returned non-OK -> keep showing all tasks
-          return;
-        }
+        if (!res.ok) return;
         const data = await res.json();
         const newStatus = {
           task1Done: !!data.task1Done,
@@ -120,17 +196,15 @@ const Dashboard = () => {
         };
         setTaskStatus(newStatus);
 
-        // If this team is currently active (socket might already have set activeTeam), show single task
         if (activeTeam && activeTeam === selectedTeam) {
           const next = getNextTaskFromStatus(newStatus);
           if (next) {
             setShowAllTasks(false);
-            setCurrentTask(next);
+            setCurrentTasks(Array.isArray(next) ? next : [next]);
           } else {
-            setShowAllTasks(true); // all done
+            setShowAllTasks(true);
           }
         } else {
-          // Timer not running for this team: default initial UX = show all tasks
           setShowAllTasks(true);
         }
       } catch (error) {
@@ -139,12 +213,17 @@ const Dashboard = () => {
     };
 
     fetchProgress();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTeam, activeTeam]);
 
-  // —— Start the timer —— //
+  // Stop clock when team box is empty
+  useEffect(() => {
+    if (!selectedTeam.trim() && activeTeam) {
+      handleStop();
+    }
+  }, [selectedTeam]);
+
   const handleStart = async () => {
-    if (!selectedTeam) return;
+    if (!selectedTeam.trim()) return;
     try {
       const res = await fetch("/api/start", {
         method: "POST",
@@ -154,9 +233,8 @@ const Dashboard = () => {
       });
 
       if (res.ok) {
-        // when start is successful, lock and show only current task
-        const next = getNextTaskFromStatus(taskStatus) || 1;
-        setCurrentTask(next);
+        const next = getNextTaskFromStatus(taskStatus);
+        setCurrentTasks(Array.isArray(next) ? next : [next]);
         setShowAllTasks(false);
         setActiveTeam(selectedTeam);
       }
@@ -165,7 +243,6 @@ const Dashboard = () => {
     }
   };
 
-  // —— Stop the timer —— //
   const handleStop = async () => {
     if (!selectedTeam) return;
     try {
@@ -178,7 +255,6 @@ const Dashboard = () => {
 
       if (res.ok) {
         setActiveTeam(null);
-        // when stopped, show all tasks again (your requested behavior)
         setShowAllTasks(true);
       }
     } catch (error) {
@@ -186,7 +262,6 @@ const Dashboard = () => {
     }
   };
 
-  // —— Mark task done —— //
   const handleDone = async (taskNumber) => {
     if (!selectedTeam) return;
     try {
@@ -198,38 +273,32 @@ const Dashboard = () => {
       });
 
       if (res.ok) {
-        // update local status right away
         setTaskStatus((prev) => {
           const updated = { ...prev, [`task${taskNumber}Done`]: true };
           return updated;
         });
 
-        // run confetti
         runConfetti();
 
-        // After a short delay, determine next behavior: move to next task or show all if finished
         if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
         confettiTimeoutRef.current = setTimeout(() => {
           setTaskStatus((prev) => {
-            // recompute what the next task should be (we already set the task as done)
             const next = getNextTaskFromStatus(prev);
             if (next) {
-              setCurrentTask(next);
-              setShowAllTasks(false); // continue single-task view
+              setCurrentTasks(Array.isArray(next) ? next : [next]);
+              setShowAllTasks(false);
             } else {
-              // all tasks done -> show four-view again
               setShowAllTasks(true);
             }
             return prev;
           });
-        }, 750);
+        }, 1000);
       }
     } catch (error) {
       console.error(`Failed to mark task${taskNumber} as done:`, error);
     }
   };
 
-  // format time
   const formatTime = (timeInSeconds) => {
     const minutes = Math.floor(timeInSeconds / 60)
       .toString()
@@ -238,9 +307,8 @@ const Dashboard = () => {
     return `${minutes}:${seconds}`;
   };
 
-  // input change + suggestions
   const handleInputChange = (e) => {
-    if (activeTeam) return; // disable input when any timer is active (existing behavior)
+    if (activeTeam) return;
     const value = e.target.value;
     setSelectedTeam(value);
 
@@ -258,21 +326,23 @@ const Dashboard = () => {
   };
 
   const handleSuggestionClick = (team) => {
-    if (activeTeam) return; // don't allow switching if some timer active
+    if (activeTeam) return;
     setSelectedTeam(team);
     setShowSuggestions(false);
   };
 
   const isValidTeam = selectedTeam.trim() !== "";
+  
   const isTaskDisabled = (task) => {
-    if (task === 1) return false;
-    if (task === 2) return !taskStatus.task1Done;
-    if (task === 3) return !taskStatus.task2Done;
+    // Tasks 1 and 2 can be done in any order
+    if (task === 1 || task === 2) return false;
+    // Task 3 requires both 1 and 2 to be done
+    if (task === 3) return !taskStatus.task1Done || !taskStatus.task2Done;
+    // Task 4 requires task 3 to be done
     if (task === 4) return !taskStatus.task3Done;
     return true;
   };
 
-  // Cleanup confetti timeout on unmount
   useEffect(() => {
     return () => {
       if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
@@ -280,19 +350,19 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gray-50 text-gray-800 p-8">
-      <div className="text-7xl font-mono font-bold mt-8 mb-4">
+    <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 text-gray-800 p-8">
+      <div className="text-8xl font-mono font-bold mt-12 mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent drop-shadow-lg">
         {formatTime(timer)}
       </div>
 
-      <div className="flex space-x-4 mb-6">
+      <div className="flex space-x-4 mb-8">
         <button
           onClick={handleStart}
-          disabled={!isValidTeam || !!activeTeam} // Can't start if no team OR already running
-          className={`px-6 py-2 rounded-lg shadow transition-all transform active:scale-95 ${
+          disabled={!isValidTeam || !!activeTeam}
+          className={`px-8 py-3 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95 font-semibold text-lg ${
             !isValidTeam || !!activeTeam
-              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-              : "bg-green-500 text-white hover:bg-green-600"
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-green-500/50"
           }`}
         >
           Start
@@ -300,27 +370,27 @@ const Dashboard = () => {
 
         <button
           onClick={handleStop}
-          disabled={!activeTeam} // Stop only when timer active
-          className={`px-6 py-2 rounded-lg shadow transition-all transform active:scale-95 ${
+          disabled={!activeTeam}
+          className={`px-8 py-3 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95 font-semibold text-lg ${
             activeTeam
-              ? "bg-red-500 text-white hover:bg-red-600"
-              : "bg-gray-300 text-gray-600 cursor-not-allowed"
+              ? "bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-red-500/50"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
         >
           Stop
         </button>
       </div>
 
-      <div className="relative mb-10 w-64">
+      <div className="relative mb-12 w-80">
         <input
           type="text"
           value={selectedTeam}
           onChange={handleInputChange}
           placeholder="Enter or select a team..."
-          className={`w-full px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:ring-2 ${
+          className={`w-full px-6 py-4 border-2 border-gray-300 rounded-2xl bg-white shadow-lg focus:ring-4 text-lg font-medium transition-all ${
             activeTeam
-              ? "cursor-not-allowed bg-gray-100"
-              : "focus:ring-blue-400"
+              ? "cursor-not-allowed bg-gray-100 border-gray-300"
+              : "focus:ring-blue-300 focus:border-blue-500 hover:border-blue-400"
           }`}
           disabled={!!activeTeam}
           onFocus={() => selectedTeam && setShowSuggestions(true)}
@@ -328,12 +398,12 @@ const Dashboard = () => {
         />
 
         {showSuggestions && filteredTeams.length > 0 && (
-          <ul className="absolute z-10 w-full mt-1 max-h-40 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg">
+          <ul className="absolute z-10 w-full mt-2 max-h-48 overflow-y-auto bg-white border-2 border-gray-200 rounded-2xl shadow-2xl">
             {filteredTeams.map((team, index) => (
               <li
                 key={index}
                 onClick={() => handleSuggestionClick(team)}
-                className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                className="px-6 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 cursor-pointer transition-all font-medium first:rounded-t-2xl last:rounded-b-2xl"
               >
                 {team}
               </li>
@@ -342,25 +412,25 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* If showAllTasks === true -> show the grid of 4 tasks.
-          If false -> show only the currentTask card */}
       {showAllTasks ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
           {[1, 2, 3, 4].map((task) => (
             <div
               key={task}
-              className="bg-white p-6 rounded-2xl shadow flex flex-col items-center justify-center border border-gray-200"
+              className="bg-white p-8 rounded-3xl shadow-xl flex flex-col items-center justify-center border-2 border-gray-100 hover:shadow-2xl transition-all transform hover:scale-105"
             >
-              <h2 className="text-xl font-semibold mb-4">Task {task}</h2>
+              <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Task {task}
+              </h2>
 
               <div className="flex space-x-4">
                 <button
                   onClick={() => isValidTeam && setEditTask(task)}
                   disabled={!isValidTeam}
-                  className={`px-5 py-2 rounded-lg text-white active:scale-95 transition-all transform ${
+                  className={`px-6 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold shadow-lg ${
                     isValidTeam
-                      ? "bg-blue-500 hover:bg-blue-600"
-                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
                 >
                   Edit
@@ -369,10 +439,10 @@ const Dashboard = () => {
                 <button
                   onClick={() => handleDone(task)}
                   disabled={isTaskDisabled(task) || taskStatus[`task${task}Done`]}
-                  className={`px-5 py-2 rounded-lg text-white active:scale-95 transition-all transform ${
+                  className={`px-6 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold shadow-lg ${
                     isTaskDisabled(task) || taskStatus[`task${task}Done`]
-                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                      : "bg-green-500 hover:bg-green-600"
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                   }`}
                 >
                   {taskStatus[`task${task}Done`] ? "Done ✓" : "Done!"}
@@ -382,36 +452,44 @@ const Dashboard = () => {
           ))}
         </div>
       ) : (
-        // Single task view
-        <div className="w-full max-w-md">
-          <div className="bg-white p-8 rounded-2xl shadow flex flex-col items-center justify-center border border-gray-200">
-            <h2 className="text-2xl font-semibold mb-4">Task {currentTask}</h2>
-
-            <div className="flex space-x-4">
-              <button
-                onClick={() => isValidTeam && setEditTask(currentTask)}
-                disabled={!isValidTeam}
-                className={`px-6 py-2 rounded-lg text-white active:scale-95 transition-all transform ${
-                  isValidTeam
-                    ? "bg-blue-500 hover:bg-blue-600"
-                    : "bg-gray-300 text-gray-600 cursor-not-allowed"
-                }`}
+        <div className={`flex justify-center w-full ${currentTasks.length === 2 ? 'max-w-5xl' : 'max-w-xl'}`}>
+          <div className={`grid ${currentTasks.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-8 w-full`}>
+            {currentTasks.map((task) => (
+              <div
+                key={task}
+                className="bg-white p-10 rounded-3xl shadow-2xl flex flex-col items-center justify-center border-2 border-gray-100 transform transition-all"
               >
-                Edit
-              </button>
+                <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Task {task}
+                </h2>
 
-              <button
-                onClick={() => handleDone(currentTask)}
-                disabled={isTaskDisabled(currentTask) || taskStatus[`task${currentTask}Done`]}
-                className={`px-6 py-2 rounded-lg text-white active:scale-95 transition-all transform ${
-                  isTaskDisabled(currentTask) || taskStatus[`task${currentTask}Done`]
-                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    : "bg-green-500 hover:bg-green-600"
-                }`}
-              >
-                {taskStatus[`task${currentTask}Done`] ? "Done ✓" : "Done!"}
-              </button>
-            </div>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => isValidTeam && setEditTask(task)}
+                    disabled={!isValidTeam}
+                    className={`px-8 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold text-lg shadow-lg ${
+                      isValidTeam
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => handleDone(task)}
+                    disabled={isTaskDisabled(task) || taskStatus[`task${task}Done`]}
+                    className={`px-8 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold text-lg shadow-lg ${
+                      isTaskDisabled(task) || taskStatus[`task${task}Done`]
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    }`}
+                  >
+                    {taskStatus[`task${task}Done`] ? "Done ✓" : "Done!"}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
