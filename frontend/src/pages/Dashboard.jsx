@@ -698,7 +698,7 @@ const Dashboard = () => {
         
         <div className="">
           {task === 1 ? (<TaskArrows socket={socket}/>) : null}
-          {task === 2 ? (<TaskMoarse />) : null}
+          {task === 2 ? (<TaskMoarse socket={socket}/>) : null}
           {task === 3 ? (null) : null}
           {task === 4 ? (null) : null}
         </div>

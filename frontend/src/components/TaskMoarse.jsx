@@ -1,11 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const TaskMoarse = () => {
-  // State for the 3-digit code
+const TaskMoarse = ({ socket }) => {
+  // State for 3-digit Morse code
   const [digits, setDigits] = useState([1, 2, 5]);
 
-  // Overall correctness flag (controls color)
-  const [isCorrect, setIsCorrect] = useState(true);
+  // Correctness flag
+  const [isCorrect, setIsCorrect] = useState(false);
+
+  // ===== Initial Fetch =====
+  useEffect(() => {
+    fetch("/api/task2/current")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("🚀 Fetched Morse data:", data);
+        const codeDigits = data.current.split("").map(Number);
+        setDigits(codeDigits);
+        setIsCorrect(data.isDone);
+      })
+      .catch((err) => {
+        console.error("❌ Error fetching Morse data:", err);
+      });
+  }, []);
+
+  // ===== Socket Listener =====
+  useEffect(() => {
+    if (!socket) return;
+    console.log("Setting up socket listener for task2Update");
+
+    socket.on("task2Update", (data) => {
+      console.log("📩 Live update from server:", data);
+      const codeDigits = data.current.split("").map(Number);
+      setDigits(codeDigits);
+      setIsCorrect(data.isDone);
+    });
+
+    // Cleanup
+    return () => socket.off("task2Update");
+  }, [socket]);
 
   return (
     <div className="flex flex-col items-center gap-8 p-10 bg-gray-50 rounded-3xl">
@@ -33,9 +64,6 @@ const TaskMoarse = () => {
       >
         {isCorrect ? "✅ Correct" : "❌ Incorrect"}
       </p>
-
-      {/* Toggle for demo/testing */}
-    
     </div>
   );
 };

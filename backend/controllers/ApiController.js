@@ -556,6 +556,8 @@ export const task2Current = async (req, res) => {
       return res.status(404).json({message:"No team found with current task active"});
     }
 
+    console.log("Fetched task2 current answer:", team.task2CurrentAnswer);
+
     return res.status(200).json({current:team.task2CurrentAnswer, isDone:team.task2Done});
   } catch (error) {
     console.error("Error fetching task2 current answer:", error);

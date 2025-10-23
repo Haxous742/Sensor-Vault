@@ -63,21 +63,21 @@ export const taskDistanceController = async(req, res) => {
     res.status(404).json({message:"No team found with current task active"});
   }
 
-  const correctAnswer= team.task2CorrectAnswer;
+  const correctAnswer= team.task4CorrectAnswer;
   
   
   // save current answer to db unconditionally
-  team.task2CurrentAnswer=current;
-  await team.save();    
+  team.task4CurrentAnswer=current;
+  await team.save();
 
     if(correctAnswer===current){   
-        team.task2Done=true;
+        team.task4Done=true;
         await team.save();
-        io.emit("task2Update", { current:current, isDone:true });
+        io.emit("task4Update", { current:current, isDone:true });
         res.status(200).json({message:"Correct answer!", isCorrect:true});
     }
     else{
-        io.emit("task2Update", { current:current, isDone:false });
+        io.emit("task4Update", { current:current, isDone:false });
         res.status(200).json({message:"Incorrect answer!", isCorrect:false});
     }
 };
@@ -106,21 +106,25 @@ export const taskMorseController = async(req, res) => {
     res.status(404).json({message:"No team found with current task active"});
   }
 
-  const correctAnswer= team.task3CorrectAnswer;
+  const correctAnswer= team.task2CorrectAnswer;
   
   
   // save current answer to db unconditionally
-  team.task3CurrentAnswer=current;
+  team.task2CurrentAnswer=current;
   await team.save();    
 
+  console.log("Correct Answer:", correctAnswer);
+  console.log("Current Answer:", current);
+  
+
     if(correctAnswer===current){   
-        team.task3Done=true;
+        team.task2Done=true;
         await team.save();
-        io.emit("task3Update", { current:current, isDone:true });
+        io.emit("task2Update", { current:current, isDone:true });
         res.status(200).json({message:"Correct answer!", isCorrect:true});              
     }
     else{
-        io.emit("task3Update", { current:current, isDone:false });
+        io.emit("task2Update", { current:current, isDone:false });
         res.status(200).json({message:"Incorrect answer!", isCorrect:false});
     }
 };
