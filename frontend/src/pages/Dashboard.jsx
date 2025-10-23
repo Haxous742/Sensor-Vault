@@ -306,6 +306,7 @@ const Dashboard = () => {
         setShowAllTasks(false);
         setActiveTeam(selectedTeam);
         setGameComplete(false);
+        
       }
     } catch (error) {
       console.error("Failed to start timer:", error);
