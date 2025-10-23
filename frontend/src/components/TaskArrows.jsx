@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useEffect } from "react";
 
 import { runVictoryConfetti } from "./confetti";
+import { PlayWrong } from "./playWrong";
 
 
 
@@ -37,6 +38,9 @@ const TaskArrows = ({socket}) => {
         setIsCorrect(data.isDone);
         if(data.isDone){
           runVictoryConfetti();
+        }
+        else{
+         PlayWrong();
         }
         
         const directions = data.current.match(/.{1,2}/g); // Split into chunks of 2

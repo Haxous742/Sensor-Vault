@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { runVictoryConfetti } from "./confetti";
+import { PlayWrong } from "./playWrong";
 
 const TaskMoarse = ({ socket }) => {
   // State for 3-digit Morse code
@@ -17,9 +18,7 @@ const TaskMoarse = ({ socket }) => {
         const codeDigits = data.current.split("").map(Number);
         setDigits(codeDigits);
         setIsCorrect(data.isDone);
-        if(data.isDone){
-          runVictoryConfetti();
-        }
+       
       })
       .catch((err) => {
         console.error("❌ Error fetching Morse data:", err);
@@ -38,6 +37,10 @@ const TaskMoarse = ({ socket }) => {
       setIsCorrect(data.isDone);
         if(data.isDone){
             runVictoryConfetti();
+        }
+        else
+        {
+         PlayWrong();
         }
     });
 
