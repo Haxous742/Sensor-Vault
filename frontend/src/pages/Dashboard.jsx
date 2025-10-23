@@ -196,7 +196,7 @@ const Dashboard = () => {
       setActiveTeam(data.team);
 
       // Check if timer reached 15 minutes (900 seconds)
-      if (data.time >= 900) {
+      if (data.time >= 10) {
         // Check if all tasks are done
         if (taskStatus.task1Done && taskStatus.task2Done && taskStatus.task3Done && taskStatus.task4Done) {
           setGameSuccess(true);
@@ -391,7 +391,9 @@ const Dashboard = () => {
   };
 
   const handleInputChange = (e) => {
-    if (activeTeam) return;
+    // Only block input if timer is actively running for this team AND team is not completed
+    if (activeTeam && activeTeam === selectedTeam && !isTeamCompleted) return;
+    
     const value = e.target.value;
     setSelectedTeam(value);
 
@@ -409,14 +411,23 @@ const Dashboard = () => {
   };
 
   const handleSuggestionClick = (team) => {
-    if (activeTeam) return;
+    // Only block selection if timer is actively running for this team AND team is not completed
+    if (activeTeam && activeTeam === selectedTeam && !isTeamCompleted) return;
+    
     setSelectedTeam(team);
     setShowSuggestions(false);
   };
 
   const handleBackToDashboard = () => {
     setGameComplete(false);
-    // Don't reset gameSuccess or isTeamCompleted - keep the completed state
+    setShowAllTasks(true);
+    // Reset task status when going back after completion
+    setTaskStatus({
+      task1Done: false,
+      task2Done: false,
+      task3Done: false,
+      task4Done: false,
+    });
   };
 
   const isValidTeam = selectedTeam.trim() !== "";
@@ -525,12 +536,12 @@ const Dashboard = () => {
           onChange={handleInputChange}
           placeholder="Enter or select a team..."
           className={`w-full px-6 py-4 border-2 border-gray-300 rounded-2xl bg-white shadow-lg focus:ring-4 text-lg font-medium transition-all ${
-            activeTeam || isTeamCompleted
+            activeTeam && activeTeam === selectedTeam && !isTeamCompleted
               ? "cursor-not-allowed bg-gray-100 border-gray-300"
               : "focus:ring-blue-300 focus:border-blue-500 hover:border-blue-400"
           }`}
-          disabled={!!activeTeam || isTeamCompleted}
-          onFocus={() => selectedTeam && !isTeamCompleted && setShowSuggestions(true)}
+          disabled={activeTeam && activeTeam === selectedTeam && !isTeamCompleted}
+          onFocus={() => selectedTeam && !(activeTeam && activeTeam === selectedTeam && !isTeamCompleted) && setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
         />
 
