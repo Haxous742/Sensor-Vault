@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
+import TaskArrows from "../components/TaskArrows.jsx";
+import TaskMoarse from "../components/TaskMoarse.jsx";
 
 const socket = io("/", { withCredentials: true });
 
@@ -9,7 +11,7 @@ const EditTaskModal = ({ taskNumber, team, onClose }) => {
 
   const handleSubmit = async () => {
     try {
-      await fetch(`/api/task${taskNumber}edit`, {
+      await fetch(`/api/task${taskNumber}/edit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -503,7 +505,8 @@ const Dashboard = () => {
         {formatTime(timer)}
       </div>
 
-      <div className="flex space-x-4 mb-8">
+      <div className="container flex flex-row items-center justify-center max-w-5xl w-full flex-wrap gap-12 align-middle">
+      <div className="flex space-x-4 mb-10">
         <button
           onClick={handleStart}
           disabled={!isValidTeam || !!activeTeam || isTeamCompleted}
@@ -559,6 +562,7 @@ const Dashboard = () => {
           </ul>
         )}
       </div>
+      </div>
 
       {showAllTasks ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
@@ -600,46 +604,108 @@ const Dashboard = () => {
           ))}
         </div>
       ) : (
-        <div className={`flex justify-center w-full ${currentTasks.length === 2 ? 'max-w-5xl' : 'max-w-xl'}`}>
-          <div className={`grid ${currentTasks.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-8 w-full`}>
-            {currentTasks.map((task) => (
-              <div
-                key={task}
-                className="bg-white p-10 rounded-3xl shadow-2xl flex flex-col items-center justify-center border-2 border-gray-100 transform transition-all"
-              >
-                <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Task {task}
-                </h2>
+        // <div className={`flex justify-center w-full `}>
+        //   <div className={`grid ${currentTasks.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-5 w-full`}>
+        //     {currentTasks.map((task) => (
+        //       <div
+        //         key={task}
+        //         className="bg-white py-10 rounded-3xl shadow-2xl flex flex-col items-center justify-center border-2 border-gray-100 transform transition-all"
+        //       >
+        //         <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        //           Task {task}
+        //         </h2>
+        //         {task === 1? (<TaskArrows />): null}
 
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => isValidTeam && setEditTask(task)}
-                    disabled={!isValidTeam}
-                    className={`px-8 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold text-lg shadow-lg ${
-                      isValidTeam
-                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    }`}
-                  >
-                    Edit
-                  </button>
+        //         {task === 2? (null): null}
 
-                  <button
-                    onClick={() => handleDone(task)}
-                    disabled={isTaskDisabled(task) || taskStatus[`task${task}Done`]}
-                    className={`px-8 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold text-lg shadow-lg ${
-                      isTaskDisabled(task) || taskStatus[`task${task}Done`]
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                    }`}
-                  >
-                    {taskStatus[`task${task}Done`] ? "Done ✓" : "Done!"}
-                  </button>
-                </div>
-              </div>
-            ))}
+        //         {task === 3? (null): null}
+
+        //         {task === 4? (null): null}
+
+        //         <div className="flex space-x-4 mt-5">
+        //           <button
+        //             onClick={() => isValidTeam && setEditTask(task)}
+        //             disabled={!isValidTeam}
+        //             className={`px-6 py-1 rounded-lg text-white active:scale-95 transition-all transform font-semibold text-sm shadow-lg ${
+        //               isValidTeam
+        //                 ? "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+        //                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
+        //             }`}
+        //           >
+        //             Edit
+        //           </button>
+
+        //           <button
+        //             onClick={() => handleDone(task)}
+        //             disabled={isTaskDisabled(task) || taskStatus[`task${task}Done`]}
+        //             className={`px-8 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold text-lg shadow-lg ${
+        //               isTaskDisabled(task) || taskStatus[`task${task}Done`]
+        //                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+        //                 : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+        //             }`}
+        //           >
+        //             {taskStatus[`task${task}Done`] ? "Done ✓" : "Done!"}
+        //           </button>
+        //         </div>
+        //       </div>
+        //     ))}
+        //   </div>
+        // </div>
+        <div className="flex justify-center w-full">
+  <div className={`grid ${currentTasks.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 w-full`}>
+    {currentTasks.map((task) => (
+      <div
+        key={task}
+        className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Task {task}
+          </h2>
+          
+          <div className="flex gap-2">
+            <button
+              onClick={() => isValidTeam && setEditTask(task)}
+              disabled={!isValidTeam}
+              className={`group p-2.5 rounded-xl transition-all duration-300 ${
+                isValidTeam
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-md hover:shadow-lg active:scale-95"
+                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              }`}
+              title="Edit"
+            >
+              <svg className="w-4 h-4 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+
+            <button
+              onClick={() => handleDone(task)}
+              disabled={isTaskDisabled(task) || taskStatus[`task${task}Done`]}
+              className={`group p-2.5 rounded-xl transition-all duration-300 ${
+                isTaskDisabled(task) || taskStatus[`task${task}Done`]
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md hover:shadow-lg active:scale-95"
+              }`}
+              title={taskStatus[`task${task}Done`] ? "Done" : "Mark as done"}
+            >
+              <svg className={`w-4 h-4 transition-all ${!isTaskDisabled(task) && !taskStatus[`task${task}Done`] && 'group-hover:scale-110'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
           </div>
         </div>
+        
+        <div className="">
+          {task === 1 ? (<TaskArrows socket={socket}/>) : null}
+          {task === 2 ? (<TaskMoarse />) : null}
+          {task === 3 ? (null) : null}
+          {task === 4 ? (null) : null}
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
       )}
 
       {editTask && (

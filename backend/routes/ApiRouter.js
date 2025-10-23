@@ -15,6 +15,10 @@ import { task3edit } from "../controllers/ApiController.js";
 import { task4edit } from "../controllers/ApiController.js";
 import { teamProgress } from "../controllers/ApiController.js";
 import { leaderboard } from "../controllers/ApiController.js";
+import { task1Current } from "../controllers/ApiController.js";
+import { task2Current } from "../controllers/ApiController.js";
+import { task3Current } from "../controllers/ApiController.js";
+import { task4Current } from "../controllers/ApiController.js";
 
 const ApiRouter = express.Router();
 
@@ -53,6 +57,14 @@ ApiRouter.post("/task2/edit", task2edit);
 ApiRouter.post("/task3/edit", task3edit);
 
 ApiRouter.post("/task4/edit", task4edit);
+
+ApiRouter.get("/task1/current", task1Current);
+
+ApiRouter.get("/task2/current", task2Current);
+
+ApiRouter.get("/task3/current", task3Current);
+
+ApiRouter.get("/task4/current", task4Current);
 
 ApiRouter.get("/teamProgress", teamProgress);
 

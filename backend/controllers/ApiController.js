@@ -529,3 +529,64 @@ export const leaderboard = async (req, res) => {
 };
 
 //=====================================================================================================================================
+
+
+
+
+export const task1Current = async (req, res) => {
+  try {
+    const team = await Team.findOne({current:true});
+
+    if(!team ){
+      return res.status(404).json({message:"No team found with current task active"});
+    }
+
+    return res.status(200).json({current:team.task1CurrentAnswer, isDone:team.task1Done});
+  } catch (error) {
+    console.error("Error fetching task1 current answer:", error);
+    res.status(500).json({ message: "Server error fetching task1 current answer" });
+  }
+};
+
+export const task2Current = async (req, res) => {
+  try {
+    const team = await Team.findOne({current:true});
+
+    if(!team ){
+      return res.status(404).json({message:"No team found with current task active"});
+    }
+
+    return res.status(200).json({current:team.task2CurrentAnswer, isDone:team.task2Done});
+  } catch (error) {
+    console.error("Error fetching task2 current answer:", error);
+    res.status(500).json({ message: "Server error fetching task2 current answer" });
+  }
+};
+
+export const task3Current = async (req, res) => {
+  try {
+    const team = await Team.findOne({current:true});      
+    if(!team ){
+      return res.status(404).json({message:"No team found with current task active"});
+    }
+
+    return res.status(200).json({current:team.task3CurrentAnswer, isDone:team.task3Done});
+  } catch (error) {
+    console.error("Error fetching task3 current answer:", error);
+    res.status(500).json({ message: "Server error fetching task3 current answer" });
+  }
+};  
+
+export const task4Current = async (req, res) => {
+  try {
+    const team = await Team.findOne({current:true});      
+    if(!team ){
+      return res.status(404).json({message:"No team found with current task active"});
+    }
+
+    return res.status(200).json({current:team.task4CurrentAnswer, isDone:team.task4Done});
+  } catch (error) {
+    console.error("Error fetching task4 current answer:", error);
+    res.status(500).json({ message: "Server error fetching task4 current answer" });
+  }
+};
