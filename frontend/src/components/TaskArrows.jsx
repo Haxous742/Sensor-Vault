@@ -1,6 +1,50 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
 
+
+
+const runVictoryConfetti = async () => {
+    try {
+      const confetti = (await import("canvas-confetti")).default;
+      
+      const duration = 4000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 120, zIndex: 9999 };
+
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 100 * (timeLeft / duration);
+        
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+          colors: ['#FFD700', '#FFA500', '#FF6347', '#00CED1', '#9370DB']
+        });
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+          colors: ['#FFD700', '#FFA500', '#FF6347', '#00CED1', '#9370DB']
+        });
+      }, 150);
+
+    } catch (err) {
+      console.warn("Confetti import failed or not installed:", err.message);
+    }
+  };
+
+
+
 const TaskArrows = ({socket}) => {
   // Current 4 directions (display only)
   const [currentDirections,setCurrentDirections] = useState(["NE", "NE", "SE", "SW"]);
@@ -31,6 +75,9 @@ const TaskArrows = ({socket}) => {
     socket.on("task1Update", (data) => {
       console.log("📩 Message from server:", data);
         setIsCorrect(data.isDone);
+        if(data.isDone){
+          runVictoryConfetti();
+        }
         
         const directions = data.current.match(/.{1,2}/g); // Split into chunks of 2
         setCurrentDirections(directions);

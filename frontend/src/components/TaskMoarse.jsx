@@ -1,5 +1,46 @@
 import React, { useState, useEffect } from "react";
 
+
+const runVictoryConfetti = async () => {
+    try {
+      const confetti = (await import("canvas-confetti")).default;
+      
+      const duration = 4000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 120, zIndex: 9999 };
+
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 100 * (timeLeft / duration);
+        
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+          colors: ['#FFD700', '#FFA500', '#FF6347', '#00CED1', '#9370DB']
+        });
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+          colors: ['#FFD700', '#FFA500', '#FF6347', '#00CED1', '#9370DB']
+        });
+      }, 150);
+
+    } catch (err) {
+      console.warn("Confetti import failed or not installed:", err.message);
+    }
+  };
+
 const TaskMoarse = ({ socket }) => {
   // State for 3-digit Morse code
   const [digits, setDigits] = useState([1, 2, 5]);
@@ -16,6 +57,9 @@ const TaskMoarse = ({ socket }) => {
         const codeDigits = data.current.split("").map(Number);
         setDigits(codeDigits);
         setIsCorrect(data.isDone);
+        if(data.isDone){
+          runVictoryConfetti();
+        }
       })
       .catch((err) => {
         console.error("❌ Error fetching Morse data:", err);
@@ -32,6 +76,9 @@ const TaskMoarse = ({ socket }) => {
       const codeDigits = data.current.split("").map(Number);
       setDigits(codeDigits);
       setIsCorrect(data.isDone);
+        if(data.isDone){
+            runVictoryConfetti();
+        }
     });
 
     // Cleanup
