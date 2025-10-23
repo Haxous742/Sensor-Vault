@@ -458,3 +458,74 @@ export const teamProgress = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+//=====================================================================================================================================
+
+export const leaderboard = async (req, res) => {
+  try {
+    // Fetch all teams from the database
+    const teams = await Team.find({}).sort({ timeTaken: 1 }); // Sort by time taken (ascending)
+
+    // Transform data to match frontend expectations
+    const leaderboardData = teams.map(team => {
+      // Count how many tasks are completed
+      const tasksCompleted = [
+        team.task1Done,
+        team.task2Done,
+        team.task3Done,
+        team.task4Done
+      ].filter(Boolean).length;
+
+      return {
+        name: team.name,
+        tasksCompleted: tasksCompleted,
+        taskTimes: [
+          team.task1timeTaken || 0,
+          team.task2timeTaken || 0,
+          team.task3timeTaken || 0,
+          team.task4timeTaken || 0
+        ],
+        overallTime: team.timeTaken || 0,
+        isDone: team.isDone,
+        current: team.current // To identify which team is currently playing
+      };
+    });
+
+    // Sort leaderboard:
+    // 1. Teams with more tasks completed come first
+    // 2. If tasks are equal, lower time comes first
+    // 3. Teams with 0 tasks go to the bottom
+    leaderboardData.sort((a, b) => {
+      // Teams with 0 tasks go to bottom
+      if (a.tasksCompleted === 0 && b.tasksCompleted === 0) {
+        return 0; // Keep original order for teams with 0 tasks
+      }
+      if (a.tasksCompleted === 0) return 1;
+      if (b.tasksCompleted === 0) return -1;
+
+      // First priority: more tasks completed
+      if (b.tasksCompleted !== a.tasksCompleted) {
+        return b.tasksCompleted - a.tasksCompleted;
+      }
+
+      // Second priority: lower time (for teams with same task count)
+      return a.overallTime - b.overallTime;
+    });
+
+    res.status(200).json({
+      success: true,
+      leaderboard: leaderboardData,
+      currentTeam: leaderboardData.find(team => team.current) || null
+    });
+
+  } catch (error) {
+    console.error("Error fetching leaderboard:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch leaderboard",
+      error: error.message 
+    });
+  }
+};
+
+//=====================================================================================================================================

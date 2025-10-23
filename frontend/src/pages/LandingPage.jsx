@@ -332,48 +332,70 @@ const TeamListItem = ({ team, rank }) => (
 
 export default function LandingPage() {
   const [list, setList] = useState([]);
+  const [currentTeam, setCurrentTeam] = useState(null);
 
-  const demo = [
-    {
-      name: "Voltage Vultures",
-      tasksCompleted: 4,
-      taskTimes: [95, 108, 175, 202],
-      overallTime: 580,
-    },
-    {
-      name: "Team Alpha",
-      tasksCompleted: 3,
-      taskTimes: [120, 180, 242, 0],
-      overallTime: 542,
-    },
-    {
-      name: "Sensor Lords",
-      tasksCompleted: 2,
-      taskTimes: [160, 220, 0, 0],
-      overallTime: 380,
-    },
-    {
-      name: "Resistor Rebels",
-      tasksCompleted: 1,
-      taskTimes: [300, 0, 0, 0],
-      overallTime: 300,
-    },
-    {
-      name: "Circuit Seekers",
-      tasksCompleted: 2,
-      taskTimes: [140, 210, 0, 0],
-      overallTime: 350,
-    },
-    {
-      name: "MagnetoOps",
-      tasksCompleted: 0,
-      taskTimes: [0, 0, 0, 0],
-      overallTime: 0,
-    },
-  ];
+  const fetchLeaderboard = async () => {
+    try {
+      const res = await fetch("/api/leaderboard");
+      const data = await res.json();
+      
+      if (data.success) {
+        setList(data.leaderboard);
+        setCurrentTeam(data.currentTeam);
+      }
+    } catch (error) {
+      console.error("Failed to fetch leaderboard:", error);
+    }
+  };
+
+
+  // const demo = [
+  //   {
+  //     name: "Voltage Vultures",
+  //     tasksCompleted: 4,
+  //     taskTimes: [95, 108, 175, 202],
+  //     overallTime: 580,
+  //   },
+  //   {
+  //     name: "Team Alpha",
+  //     tasksCompleted: 3,
+  //     taskTimes: [120, 180, 242, 0],
+  //     overallTime: 542,
+  //   },
+  //   {
+  //     name: "Sensor Lords",
+  //     tasksCompleted: 2,
+  //     taskTimes: [160, 220, 0, 0],
+  //     overallTime: 380,
+  //   },
+  //   {
+  //     name: "Resistor Rebels",
+  //     tasksCompleted: 1,
+  //     taskTimes: [300, 0, 0, 0],
+  //     overallTime: 300,
+  //   },
+  //   {
+  //     name: "Circuit Seekers",
+  //     tasksCompleted: 2,
+  //     taskTimes: [140, 210, 0, 0],
+  //     overallTime: 350,
+  //   },
+  //   {
+  //     name: "MagnetoOps",
+  //     tasksCompleted: 0,
+  //     taskTimes: [0, 0, 0, 0],
+  //     overallTime: 0,
+  //   },
+  // ];
 
   useEffect(() => {
-    setList(demo);
+    // Initial fetch
+    fetchLeaderboard();
+
+    // Set up polling every 5 seconds for live updates
+    const interval = setInterval(fetchLeaderboard, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const top3 = list.slice(0, 3);
@@ -529,37 +551,41 @@ export default function LandingPage() {
           />
           
           <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm relative z-10">
-            <div className="flex items-center gap-1.5 sm:gap-2"
-              style={{fontFamily:"Sakana,sans-serif"}}
-            >
-              <motion.div
-                animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-                className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-400 rounded-full shadow-lg"
-              />
-              <span className="font-semibold text-white/90">LIVE</span>
-            </div>
-            <div className="h-3 sm:h-4 w-px bg-white/30" />
-            <span className="font-medium text-white/80">Playing:</span>
-            <motion.span 
-              key="team-alpha"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="text-sm sm:text-base font-black text-white"
-            >
-              Team Alpha
-            </motion.span>
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] sm:text-xs font-medium text-white/70">Tasks:</span>
-              <motion.span 
-                key="3-4"
-                initial={{ scale: 1.2 }}
-                animate={{ scale: 1 }}
-                className="text-xs sm:text-sm font-bold text-white"
-              >
-                3/4
-              </motion.span>
-            </div>
+            {currentTeam ? (
+              <>
+                <div className="flex items-center gap-1.5 sm:gap-2" style={{fontFamily:"Sakana,sans-serif"}}>
+                  <motion.div
+                    animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-400 rounded-full shadow-lg"
+                  />
+                  <span className="font-semibold text-white/90">LIVE</span>
+                </div>
+                <div className="h-3 sm:h-4 w-px bg-white/30" />
+                <span className="font-medium text-white/80">Playing:</span>
+                <motion.span 
+                  key={currentTeam.name}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="text-sm sm:text-base font-black text-white"
+                >
+                  {currentTeam.name}
+                </motion.span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] sm:text-xs font-medium text-white/70">Tasks:</span>
+                  <motion.span 
+                    key={`${currentTeam.tasksCompleted}-4`}
+                    initial={{ scale: 1.2 }}
+                    animate={{ scale: 1 }}
+                    className="text-xs sm:text-sm font-bold text-white"
+                  >
+                    {currentTeam.tasksCompleted}/4
+                  </motion.span>
+                </div>
+              </>
+            ) : (
+              <span className="font-medium text-white/90">No team currently playing</span>
+            )}
           </div>
         </motion.div>
 

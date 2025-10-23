@@ -14,6 +14,7 @@ import { task2edit } from "../controllers/ApiController.js";
 import { task3edit } from "../controllers/ApiController.js";
 import { task4edit } from "../controllers/ApiController.js";
 import { teamProgress } from "../controllers/ApiController.js";
+import { leaderboard } from "../controllers/ApiController.js";
 
 const ApiRouter = express.Router();
 
@@ -54,5 +55,7 @@ ApiRouter.post("/task3/edit", task3edit);
 ApiRouter.post("/task4/edit", task4edit);
 
 ApiRouter.get("/teamProgress", teamProgress);
+
+ApiRouter.get("/leaderboard", leaderboard);
 
 export default ApiRouter;
