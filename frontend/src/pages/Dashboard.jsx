@@ -196,7 +196,7 @@ const Dashboard = () => {
       setActiveTeam(data.team);
 
       // Check if timer reached 15 minutes (900 seconds)
-      if (data.time >= 10) {
+      if (data.time >= 900) {
         // Check if all tasks are done
         if (taskStatus.task1Done && taskStatus.task2Done && taskStatus.task3Done && taskStatus.task4Done) {
           setGameSuccess(true);
