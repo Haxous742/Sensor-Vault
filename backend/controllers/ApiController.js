@@ -592,3 +592,16 @@ export const task4Current = async (req, res) => {
     res.status(500).json({ message: "Server error fetching task4 current answer" });
   }
 };
+
+
+export const task2Correct = async(req, res) => {
+   const team = await Team.findOne({current:true});
+
+  if(!team){
+    res.status(404).json({message:"No team found with current task active"});
+  }
+
+  const correctAnswer= team.task2CorrectAnswer;
+  
+  res.status(200).json({correct:correctAnswer});
+};

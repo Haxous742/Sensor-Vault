@@ -36,8 +36,8 @@ const teamSchema = new Schema(
     task2timeTaken: { type: Number, default: 0 },
     task2Done: { type: Boolean, default: false },
 
-    task3CorrectAnswer: { type: String },
-    task3CurrentAnswer:{ type: String  },
+    task3CorrectAnswer: { type: Array },
+    task3CurrentAnswer:{ type: Array  },
     task3timeTaken: { type: Number, default: 0 },
     task3Done: { type: Boolean, default: false },
 

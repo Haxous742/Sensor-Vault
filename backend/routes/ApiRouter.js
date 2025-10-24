@@ -19,6 +19,7 @@ import { task1Current } from "../controllers/ApiController.js";
 import { task2Current } from "../controllers/ApiController.js";
 import { task3Current } from "../controllers/ApiController.js";
 import { task4Current } from "../controllers/ApiController.js";
+import { task2Correct } from "../controllers/ApiController.js";
 
 const ApiRouter = express.Router();
 
@@ -63,6 +64,9 @@ ApiRouter.get("/task1/current", task1Current);
 ApiRouter.get("/task2/current", task2Current);
 
 ApiRouter.get("/task3/current", task3Current);
+
+
+ApiRouter.get("/task2/correct", task2Correct);
 
 ApiRouter.get("/task4/current", task4Current);
 

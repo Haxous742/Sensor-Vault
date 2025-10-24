@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
 import TaskArrows from "../components/TaskArrows.jsx";
 import TaskMoarse from "../components/TaskMoarse.jsx";
+import TaskMagnetic from "../components/TaskMagnetic.jsx";
 
 const socket = io("/", { withCredentials: true });
 
@@ -700,7 +701,7 @@ const Dashboard = () => {
         <div className="">
           {task === 1 ? (<TaskArrows socket={socket}/>) : null}
           {task === 2 ? (<TaskMoarse socket={socket}/>) : null}
-          {task === 3 ? (null) : null}
+          {task === 3 ? (<TaskMagnetic socket={socket}/>) : null}
           {task === 4 ? (null) : null}
         </div>
       </div>

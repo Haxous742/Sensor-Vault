@@ -1,0 +1,164 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include "esp_wpa2.h"
+
+// ====== ADC + Power Configuration ======
+#define ADC_PINS {32, 33, 34, 35}
+#define POWER_PINS {25, 26, 27, 14, 12, 13, 18, 19}
+#define TRIGGER_PIN 15  // <— NEW: Trigger pin
+
+const float ADC_MAX = 4095.0;
+const float VREF = 3.3;
+const float SENSITIVITY = 1.4; // mV per Gauss
+
+float zeroField[8];  // Calibration offsets
+
+// ====== Wi-Fi Config ======
+const char* ssid = "IIITB-Milan";
+const char* username = "iiitb\\Aryan.Sharma12";
+const char* password = "F0y91zEG";
+const char* serverName = "https://sensorvault.live/api/iot/taskmagnetic";
+
+// ====== Function Prototypes ======
+void connectEnterpriseWiFi();
+void calibrateSensors();
+float readSensorVoltage(int adcPin, int powerPin);
+String getMagneticStateString();
+
+// ====== Setup ======
+void setup() {
+  Serial.begin(115200);
+  Serial.println("\n🧲 ESP32 Magnetic Array Sensor (8xSS49E) with Trigger Pin\n");
+
+  int powerPins[8] = POWER_PINS;
+  for (int i = 0; i < 8; i++) {
+    pinMode(powerPins[i], OUTPUT);
+    digitalWrite(powerPins[i], LOW);
+  }
+
+  pinMode(TRIGGER_PIN, INPUT);  // new input pin
+
+  connectEnterpriseWiFi();
+  calibrateSensors();
+}
+
+// ====== Loop ======
+void loop() {
+  // Only act when the trigger pin is HIGH
+  if (digitalRead(TRIGGER_PIN) == HIGH) {
+    Serial.println("🔔 Trigger detected — reading sensors and sending data...");
+
+    String magneticState = getMagneticStateString();
+    Serial.println("📤 Sending Magnetic Data: " + magneticState);
+
+    if (WiFi.status() == WL_CONNECTED) {
+      HTTPClient http;
+      http.begin(serverName);
+      http.addHeader("Content-Type", "application/json");
+      http.addHeader("Authorization", "bearer MaiSensorDataHoonMujheAndarJaneDo");
+
+      String payload = "{\"magnetic\":\"" + magneticState + "\"}";
+      int code = http.POST(payload);
+
+      if (code > 0) {
+        Serial.println("✅ Response: " + http.getString());
+      } else {
+        Serial.printf("❌ HTTP Error: %d\n", code);
+      }
+      http.end();
+    } else {
+      Serial.println("⚠️ WiFi not connected!");
+    }
+
+    Serial.println("🕐 Waiting for trigger to go LOW...");
+    while (digitalRead(TRIGGER_PIN) == HIGH) delay(50);  // wait until pin released
+    delay(200); // debounce safety
+  }
+
+  delay(100);
+}
+
+// ====== WPA2 Enterprise Wi-Fi Connect ======
+void connectEnterpriseWiFi() {
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_STA);
+
+  esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)username, strlen(username));
+  esp_wifi_sta_wpa2_ent_set_username((uint8_t *)username, strlen(username));
+  esp_wifi_sta_wpa2_ent_set_password((uint8_t *)password, strlen(password));
+  esp_wifi_sta_wpa2_ent_enable();
+
+  WiFi.begin(ssid);
+  Serial.print("🌐 Connecting to Wi-Fi");
+
+  int retries = 0;
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    retries++;
+    if (retries > 40) {
+      Serial.println("\n❌ Wi-Fi Connection Failed!");
+      return;
+    }
+  }
+
+  Serial.println("\n✅ Wi-Fi Connected!");
+  Serial.print("IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+// ====== Sensor Calibration ======
+void calibrateSensors() {
+  Serial.println("\n⚙️ Calibrating Sensors... Keep them away from magnets!");
+  int adcPins[4] = ADC_PINS;
+  int powerPins[8] = POWER_PINS;
+  const int samples = 15;
+
+  for (int i = 0; i < 8; i++) {
+    float sum = 0;
+    for (int j = 0; j < samples; j++) {
+      sum += readSensorVoltage(adcPins[i / 2], powerPins[i]);
+      delay(20);
+    }
+    zeroField[i] = sum / samples;
+    Serial.printf("  S%d Zero Offset: %.4f V\n", i + 1, zeroField[i]);
+  }
+  Serial.println("✅ Calibration Complete.\n");
+}
+
+// ====== Read Single Sensor ======
+float readSensorVoltage(int adcPin, int powerPin) {
+  digitalWrite(powerPin, HIGH);
+  delay(8);
+  int raw = analogRead(adcPin);
+  digitalWrite(powerPin, LOW);
+  return (raw / ADC_MAX) * VREF;
+}
+
+// ====== Compute Magnetic States ======
+String getMagneticStateString() {
+  int adcPins[4] = ADC_PINS;
+  int powerPins[8] = POWER_PINS;
+  int states[8];
+
+  for (int i = 0; i < 8; i++) {
+    float voltage = readSensorVoltage(adcPins[i / 2], powerPins[i]);
+    float field = ((voltage - zeroField[i]) * 1000.0) / SENSITIVITY;
+
+    if (field > 50) states[i] = 1;
+    else if (field < -50) states[i] = -1;
+    else states[i] = 0;
+
+    Serial.printf("S%d: %.1f G → %d  ", i + 1, field, states[i]);
+    if ((i + 1) % 2 == 0) Serial.println();
+  }
+
+  String result = "[";
+  for (int i = 0; i < 8; i++) {
+    result += String(states[i]);
+    if (i < 7) result += ",";
+  }
+  result += ",0]";
+  Serial.println("------------------------------");
+  return result;
+}

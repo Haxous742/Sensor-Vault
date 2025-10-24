@@ -151,21 +151,21 @@ export const taskMagneticController = async(req, res) => {
     res.status(404).json({message:"No team found with current task active"});
   }
 
-  const correctAnswer= team.task4CorrectAnswer;
+  const correctAnswer= team.task3CorrectAnswer;
   
   
   // save current answer to db unconditionally
-  team.task4CurrentAnswer=current;
-  await team.save();    
+  team.task3CurrentAnswer=current;
+  await team.save();
 
     if(correctAnswer===current){   
-        team.task4Done=true;
+        team.task3Done=true;
         await team.save();
-        io.emit("task4Update", { current:current, isDone:true });
-        res.status(200).json({message:"Correct answer!", isCorrect:true});              
+        io.emit("task3Update", { current:current, isDone:true });
+        res.status(200).json({message:"Correct answer!", isCorrect:true});
     }
     else{
-        io.emit("task4Update", { current:current, isDone:false });
+        io.emit("task3Update", { current:current, isDone:false });
         res.status(200).json({message:"Incorrect answer!", isCorrect:false});
     }
 };
