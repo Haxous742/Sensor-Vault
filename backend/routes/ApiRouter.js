@@ -21,6 +21,7 @@ import { task3Current } from "../controllers/ApiController.js";
 import { task4Current } from "../controllers/ApiController.js";
 import { task2Correct } from "../controllers/ApiController.js";
 import { logout } from "../controllers/ApiController.js";
+import { register } from "../controllers/ApiController.js";
 
 const ApiRouter = express.Router();
 
@@ -34,6 +35,8 @@ ApiRouter.get("/health", (req, res) => {
 ApiRouter.post("/login", login);
 
 ApiRouter.get("/verify", verify);
+
+ApiRouter.post("/register", register);
 
 ApiRouter.get("/logout", logout);
 

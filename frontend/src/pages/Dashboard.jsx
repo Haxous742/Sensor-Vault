@@ -6,7 +6,6 @@ import TaskMagnetic from "../components/TaskMagnetic.jsx";
 
 const socket = io("/", { withCredentials: true });
 
-// Mock EditTaskModal component
 const EditTaskModal = ({ taskNumber, team, onClose }) => {
   const [text, setText] = useState("");
 
@@ -77,6 +76,15 @@ const Dashboard = () => {
   const [isTeamCompleted, setIsTeamCompleted] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [teamName, setTeamName] = useState("");
+  const [leaderName, setLeaderName] = useState("");
+  const [leaderEmail, setLeaderEmail] = useState("");
+  const [members, setMembers] = useState([
+    { name: "", email: "" },
+    { name: "", email: "" },
+    { name: "", email: "" },
+    { name: "", email: "" }
+  ]);
   const confettiTimeoutRef = useRef(null);
 
   // Save selected team to localStorage whenever it changes
@@ -87,6 +95,16 @@ const Dashboard = () => {
       localStorage.removeItem("selectedTeam");
     }
   }, [selectedTeam]);
+
+  const fetchTeams = async () => {
+    try {
+      const res = await fetch("/api/getTeams");
+      const data = await res.json();
+      setTeams(data || []);
+    } catch (error) {
+      console.error("Failed to fetch teams:", error);
+    }
+  };
 
   const getNextTaskFromStatus = (status) => {
     if (!status) return [1, 2];
@@ -183,15 +201,6 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    const fetchTeams = async () => {
-      try {
-        const res = await fetch("/api/getTeams");
-        const data = await res.json();
-        setTeams(data || []);
-      } catch (error) {
-        console.error("Failed to fetch teams:", error);
-      }
-    };
     fetchTeams();
   }, []);
 
@@ -442,9 +451,39 @@ const Dashboard = () => {
         method: "GET",
         credentials: "include",
       });
-      window.location.href = "/";
+      window.location.href = "/dashboard/login";
     } catch (error) {
       console.error("Failed to logout:", error);
+    }
+  };
+
+  const handleRegistration = async (data) => {
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+      console.log("Server response:", result);
+      if (res.ok) {
+        fetchTeams();
+        setSelectedTeam(data.teamName);
+        // Reset form
+        setTeamName("");
+        setLeaderName("");
+        setLeaderEmail("");
+        setMembers([
+          { name: "", email: "" },
+          { name: "", email: "" },
+          { name: "", email: "" },
+          { name: "", email: "" }
+        ]);
+      }
+    } catch (error) {
+      console.error("Registration failed:", error);
     }
   };
 
@@ -743,6 +782,8 @@ const Dashboard = () => {
                 </label>
                 <input
                   type="text"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
                   placeholder="Enter team name"
                 />
@@ -758,6 +799,8 @@ const Dashboard = () => {
                     </label>
                     <input
                       type="text"
+                      value={leaderName}
+                      onChange={(e) => setLeaderName(e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white"
                       placeholder="Enter leader name"
                     />
@@ -768,6 +811,8 @@ const Dashboard = () => {
                     </label>
                     <input
                       type="email"
+                      value={leaderEmail}
+                      onChange={(e) => setLeaderEmail(e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white"
                       placeholder="Enter leader email"
                     />
@@ -779,29 +824,44 @@ const Dashboard = () => {
               <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-200">
                 <h4 className="text-lg font-bold text-gray-800 mb-4">Team Members (Optional)</h4>
                 <div className="space-y-6">
-                  {[1, 2, 3, 4].map((member) => (
-                    <div key={member} className="space-y-3 pb-6 border-b border-gray-300 last:border-b-0 last:pb-0">
-                      <p className="text-sm font-semibold text-gray-600">Member {member}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
-                          <input
-                            type="text"
-                            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-sm"
-                            placeholder="Member name"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
-                          <input
-                            type="email"
-                            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-sm"
-                            placeholder="Member email"
-                          />
+                  {[1, 2, 3, 4].map((member) => {
+                    const index = member - 1;
+                    return (
+                      <div key={member} className="space-y-3 pb-6 border-b border-gray-300 last:border-b-0 last:pb-0">
+                        <p className="text-sm font-semibold text-gray-600">Member {member}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+                            <input
+                              type="text"
+                              value={members[index].name}
+                              onChange={(e) => {
+                                const newMembers = [...members];
+                                newMembers[index].name = e.target.value;
+                                setMembers(newMembers);
+                              }}
+                              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-sm"
+                              placeholder="Member name"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+                            <input
+                              type="email"
+                              value={members[index].email}
+                              onChange={(e) => {
+                                const newMembers = [...members];
+                                newMembers[index].email = e.target.value;
+                                setMembers(newMembers);
+                              }}
+                              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-sm"
+                              placeholder="Member email"
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -815,8 +875,15 @@ const Dashboard = () => {
               </button>
               <button 
                 onClick={() => {
-                  // Submit functionality to be implemented
                   console.log("Register button clicked");
+                  const data = {
+                    teamName,
+                    leaderName,
+                    leaderEmail,
+                    members
+                  };
+                  handleRegistration(data);
+                  setShowRegisterModal(false);
                 }}
                 className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg font-medium"
               >

@@ -23,7 +23,7 @@ void setup() {
   Serial.println("\n🔵 ESP32 Morse Display via API\n");
 
   pinMode(MORSE_PIN, OUTPUT);
-  digitalWrite(MORSE_PIN, LOW);
+  digitalWrite(MORSE_PIN, HIGH);
 
   connectEnterpriseWiFi();
 }
@@ -99,13 +99,13 @@ void blinkMorseNumber(String number) {
 // ====== Blink Single Morse Symbol ======
 void blinkMorseSymbol(char symbol) {
   if (symbol == '.') {
-    digitalWrite(MORSE_PIN, HIGH);
+    digitalWrite(MORSE_PIN, LOW);
     delay(500); // short blink
-    digitalWrite(MORSE_PIN, LOW);
-  } else if (symbol == '-') {
     digitalWrite(MORSE_PIN, HIGH);
-    delay(1500); // long blink
+  } else if (symbol == '-') {
     digitalWrite(MORSE_PIN, LOW);
+    delay(1500); // long blink
+    digitalWrite(MORSE_PIN, HIGH);
   }
 }
 

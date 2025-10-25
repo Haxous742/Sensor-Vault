@@ -66,6 +66,34 @@ export const verify = async (req, res) => {
   }
 }
 
+export const register = async (req, res) => {
+  try {
+    const { teamName, leaderName, leaderEmail, members } = req.body;
+    
+    // Basic validation for required fields
+    if (!teamName || !leaderName || !leaderEmail) {
+      return res.status(400).json({ success: false, message: "Team name, leader name, and leader email are required." });
+    }
+
+    const existingTeam = await Team.findOne({ name: teamName });
+    if (existingTeam) return res.status(400).json({ success: false, message: "Team already exists" });
+
+    // Filter out empty members (only include those with both name and email)
+    const filteredMembers = members ? members.filter(m => m.name && m.name.trim() && m.email && m.email.trim()) : [];
+
+    const newTeam = new Team({ 
+      name: teamName, 
+      leader: { name: leaderName, email: leaderEmail.toLowerCase().trim() }, 
+      members: filteredMembers
+    });
+    await newTeam.save();
+    return res.status(200).json({ success: true, message: "Team registered successfully" });
+  } catch (err) {
+    console.error("Registration error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  } 
+}
+
 export const logout = async (req, res) => {
   res.clearCookie("auth_token");
   return res.json({ success: true, message: "Logout successful" });
