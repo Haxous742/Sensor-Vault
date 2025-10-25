@@ -1,0 +1,156 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include "esp_wpa2.h"
+
+// ====== Pin Configuration ======
+#define MORSE_PIN 26  // Pin used for LED output
+
+// ====== Wi-Fi Config ======
+const char* ssid = "IIITB-Milan";
+const char* username = "iiitb\\Aryan.Sharma12";
+const char* password = "F0y91zEG";
+const char* serverName = "https://sensorvault.live/api/task2/correct";
+
+// ====== Function Prototypes ======
+void connectEnterpriseWiFi();
+void blinkMorseNumber(String number);
+void blinkMorseSymbol(char symbol);
+String getMorseForDigit(char digit);
+
+// ====== Setup ======
+void setup() {
+  Serial.begin(115200);
+  Serial.println("\n🔵 ESP32 Morse Display via API\n");
+
+  pinMode(MORSE_PIN, OUTPUT);
+  digitalWrite(MORSE_PIN, LOW);
+
+  connectEnterpriseWiFi();
+}
+
+// ====== Loop ======
+void loop() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(serverName);
+    http.addHeader("Authorization", "bearer MaiSensorDataHoonMujheAndarJaneDo");
+
+    Serial.println("🌐 Making GET request...");
+    int httpCode = http.GET();
+
+    if (httpCode > 0) {
+      String payload = http.getString();
+      Serial.println("✅ Response: " + payload);
+
+      // Try to extract "current" value
+      int index = payload.indexOf("\"correct\"");
+      if (index != -1) {
+        int colonIndex = payload.indexOf(":", index);
+        int commaIndex = payload.indexOf(",", colonIndex);
+        if (commaIndex == -1) commaIndex = payload.indexOf("}", colonIndex);
+
+        String currentValue = payload.substring(colonIndex + 1, commaIndex);
+        currentValue.trim();
+        Serial.println("📟 Correct Code: " + currentValue);
+
+        // Blink the number sequence as Morse
+        blinkMorseNumber(currentValue);
+      } else {
+        Serial.println("⚠️ 'correct' field not found in response!");
+      }
+    } else {
+      Serial.printf("❌ HTTP Error: %d\n", httpCode);
+    }
+
+    http.end();
+  } else {
+    Serial.println("⚠️ WiFi disconnected! Reconnecting...");
+    connectEnterpriseWiFi();
+  }
+
+  // Wait before next fetch (2 seconds)
+  delay(5000);
+}
+
+// ====== Morse Blink Function ======
+void blinkMorseNumber(String number) {
+  Serial.println("🔔 Displaying numbers in Morse style...");
+
+  for (int i = 0; i < number.length(); i++) {
+    char ch = number[i];
+    if (isDigit(ch)) {
+      String morseCode = getMorseForDigit(ch);
+      Serial.printf("Digit %c → Morse: %s\n", ch, morseCode.c_str());
+
+      for (int j = 0; j < morseCode.length(); j++) {
+        blinkMorseSymbol(morseCode[j]);
+        delay(500); // gap between symbols
+      }
+
+      delay(2000); // gap between digits
+    } else {
+      Serial.printf("Skipping non-digit: %c\n", ch);
+    }
+  }
+
+  Serial.println("✅ Morse display done!\n");
+}
+
+// ====== Blink Single Morse Symbol ======
+void blinkMorseSymbol(char symbol) {
+  if (symbol == '.') {
+    digitalWrite(MORSE_PIN, HIGH);
+    delay(500); // short blink
+    digitalWrite(MORSE_PIN, LOW);
+  } else if (symbol == '-') {
+    digitalWrite(MORSE_PIN, HIGH);
+    delay(1500); // long blink
+    digitalWrite(MORSE_PIN, LOW);
+  }
+}
+
+// ====== Get Morse Code for Digits (ITU Standard) ======
+String getMorseForDigit(char digit) {
+  switch (digit) {
+    case '0': return "-----"; // 0 = -----
+    case '1': return ".----"; // 1 = .----
+    case '2': return "..---"; // 2 = ..---
+    case '3': return "...--"; // 3 = ...--
+    case '4': return "....-"; // 4 = ....-
+    case '5': return "....."; // 5 = .....
+    case '6': return "-...."; // 6 = -....
+    case '7': return "--..."; // 7 = --...
+    case '8': return "---.."; // 8 = ---..
+    case '9': return "----."; // 9 = ----.
+    default:  return "";
+  }
+}
+
+// ====== WPA2 Enterprise Wi-Fi Connect ======
+void connectEnterpriseWiFi() {
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_STA);
+
+  esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)username, strlen(username));
+  esp_wifi_sta_wpa2_ent_set_username((uint8_t *)username, strlen(username));
+  esp_wifi_sta_wpa2_ent_set_password((uint8_t *)password, strlen(password));
+  esp_wifi_sta_wpa2_ent_enable();
+
+  WiFi.begin(ssid);
+  Serial.print("🌐 Connecting to Wi-Fi");
+
+  int retries = 0;
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    retries++;
+    if (retries > 40) {
+      Serial.println("\n❌ Wi-Fi Connection Failed!");
+      return;
+    }
+  }
+
+  Serial.println("\n✅ Wi-Fi Connected!");
+  Serial.print("IP: ");
+  Serial.println(WiFi.localIP());
+}
