@@ -66,6 +66,11 @@ export const verify = async (req, res) => {
   }
 }
 
+export const logout = async (req, res) => {
+  res.clearCookie("auth_token");
+  return res.json({ success: true, message: "Logout successful" });
+}
+
 //=====================================================================================================================================
 
 let interval = null;
@@ -531,8 +536,6 @@ export const leaderboard = async (req, res) => {
 //=====================================================================================================================================
 
 
-
-
 export const task1Current = async (req, res) => {
   try {
     const team = await Team.findOne({current:true});
@@ -594,6 +597,8 @@ export const task4Current = async (req, res) => {
 };
 
 
+//=====================================================================================================================================
+
 export const task2Correct = async(req, res) => {
    const team = await Team.findOne({current:true});
 
@@ -605,3 +610,5 @@ export const task2Correct = async(req, res) => {
   
   res.status(200).json({correct:correctAnswer});
 };
+
+//=====================================================================================================================================

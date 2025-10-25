@@ -75,6 +75,8 @@ const Dashboard = () => {
   const [gameComplete, setGameComplete] = useState(false);
   const [gameSuccess, setGameSuccess] = useState(false);
   const [isTeamCompleted, setIsTeamCompleted] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const confettiTimeoutRef = useRef(null);
 
   // Save selected team to localStorage whenever it changes
@@ -434,6 +436,18 @@ const Dashboard = () => {
     });
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", {
+        method: "GET",
+        credentials: "include",
+      });
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Failed to logout:", error);
+    }
+  };
+
   const isValidTeam = selectedTeam.trim() !== "";
   
   const isTaskDisabled = (task) => {
@@ -503,6 +517,48 @@ const Dashboard = () => {
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 text-gray-800 p-8">
+      {/* Menu Button */}
+      <div className="absolute top-6 right-6">
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          className="p-3 rounded-xl bg-white shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+        >
+          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        {/* Dropdown Menu */}
+        {showMenu && (
+          <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+            <button
+              onClick={() => {
+                setShowMenu(false);
+                setShowRegisterModal(true);
+              }}
+              className="w-full px-6 py-3 text-left hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all font-medium text-gray-700 flex items-center gap-3"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+              Register
+            </button>
+            <button
+              onClick={() => {
+                setShowMenu(false);
+                handleLogout();
+              }}
+              className="w-full px-6 py-3 text-left hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 transition-all font-medium text-red-600 flex items-center gap-3 border-t border-gray-100"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Logout
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="text-8xl font-mono font-bold mt-12 mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent drop-shadow-lg">
         {formatTime(timer)}
       </div>
@@ -606,53 +662,6 @@ const Dashboard = () => {
           ))}
         </div>
       ) : (
-        // <div className={`flex justify-center w-full `}>
-        //   <div className={`grid ${currentTasks.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-5 w-full`}>
-        //     {currentTasks.map((task) => (
-        //       <div
-        //         key={task}
-        //         className="bg-white py-10 rounded-3xl shadow-2xl flex flex-col items-center justify-center border-2 border-gray-100 transform transition-all"
-        //       >
-        //         <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-        //           Task {task}
-        //         </h2>
-        //         {task === 1? (<TaskArrows />): null}
-
-        //         {task === 2? (null): null}
-
-        //         {task === 3? (null): null}
-
-        //         {task === 4? (null): null}
-
-        //         <div className="flex space-x-4 mt-5">
-        //           <button
-        //             onClick={() => isValidTeam && setEditTask(task)}
-        //             disabled={!isValidTeam}
-        //             className={`px-6 py-1 rounded-lg text-white active:scale-95 transition-all transform font-semibold text-sm shadow-lg ${
-        //               isValidTeam
-        //                 ? "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-        //                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
-        //             }`}
-        //           >
-        //             Edit
-        //           </button>
-
-        //           <button
-        //             onClick={() => handleDone(task)}
-        //             disabled={isTaskDisabled(task) || taskStatus[`task${task}Done`]}
-        //             className={`px-8 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold text-lg shadow-lg ${
-        //               isTaskDisabled(task) || taskStatus[`task${task}Done`]
-        //                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-        //                 : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-        //             }`}
-        //           >
-        //             {taskStatus[`task${task}Done`] ? "Done ✓" : "Done!"}
-        //           </button>
-        //         </div>
-        //       </div>
-        //     ))}
-        //   </div>
-        // </div>
         <div className="flex justify-center w-full">
   <div className={`grid ${currentTasks.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 w-full`}>
     {currentTasks.map((task) => (
@@ -716,6 +725,106 @@ const Dashboard = () => {
           team={selectedTeam}
           onClose={() => setEditTask(null)}
         />
+      )}
+
+      {/* Register Modal */}
+      {showRegisterModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
+            <h3 className="text-3xl font-bold mb-6 text-gray-800 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Register Team
+            </h3>
+            
+            <div className="space-y-6">
+              {/* Team Name */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Team Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
+                  placeholder="Enter team name"
+                />
+              </div>
+
+              {/* Team Leader */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl border-2 border-blue-100">
+                <h4 className="text-lg font-bold text-gray-800 mb-4">Team Leader</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white"
+                      placeholder="Enter leader name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white"
+                      placeholder="Enter leader email"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Team Members */}
+              <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-200">
+                <h4 className="text-lg font-bold text-gray-800 mb-4">Team Members (Optional)</h4>
+                <div className="space-y-6">
+                  {[1, 2, 3, 4].map((member) => (
+                    <div key={member} className="space-y-3 pb-6 border-b border-gray-300 last:border-b-0 last:pb-0">
+                      <p className="text-sm font-semibold text-gray-600">Member {member}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+                          <input
+                            type="text"
+                            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-sm"
+                            placeholder="Member name"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+                          <input
+                            type="email"
+                            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-sm"
+                            placeholder="Member email"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-8">
+              <button 
+                onClick={() => setShowRegisterModal(false)}
+                className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  // Submit functionality to be implemented
+                  console.log("Register button clicked");
+                }}
+                className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg font-medium"
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
