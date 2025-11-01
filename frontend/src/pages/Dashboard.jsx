@@ -33,9 +33,17 @@ const EditTaskModal = ({ taskNumber, team, onClose }) => {
           value={text}
           onChange={(e) => setText(e.target.value)}
           className="w-full p-4 border-2 border-gray-200 rounded-xl mb-6 focus:border-blue-500 focus:outline-none transition-colors resize-none"
-          rows="5"
-          placeholder="Enter task details..."
+          rows={taskNumber === 3 ? 1 : 5} // Single line for task 3 (9 chars)
+          placeholder={taskNumber === 3 ? "Enter 9 digits (0=off, 1=N pole, 2=S pole): e.g., 101010121" : "Enter task details..."}
+          maxLength={taskNumber === 3 ? 9 : undefined}
         />
+        {taskNumber === 3 && (
+          <p className="text-xs text-gray-500 mb-4">
+            • 0: No pole (off)<br />
+            • 1: North pole (N)<br />
+            • 2: South pole (S)
+          </p>
+        )}
         <div className="flex justify-end space-x-3">
           <button 
             onClick={onClose} 
@@ -756,13 +764,13 @@ const Dashboard = () => {
           {task === 3 ? (
             <TaskMagnetic 
               socket={socket} 
-              onTaskComplete={handleDone}  // This will call handleDone(3) when correct
+              onTaskComplete={handleDone}  
             />
           ) : null}
           {task === 4 ? (
             <TaskDistance 
               socket={socket} 
-              onTaskComplete={handleDone}  // This will call handleDone(4) when correct → triggers victory
+              onTaskComplete={handleDone}  
             />
           ) : null}
         </div>

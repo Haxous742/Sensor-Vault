@@ -241,7 +241,6 @@ export const task1 = async (req, res) => {
     if (!existingTeam)
       return res.status(404).json({ message: `Team '${team}' not found` });
 
-    // Calculate time from start to now
     const now = new Date();
     const startTime = existingTeam.startedAt;
     if (!startTime) return res.status(400).json({ message: "Session not started" });
@@ -250,7 +249,7 @@ export const task1 = async (req, res) => {
 
     existingTeam.task1Done = true;
     existingTeam.task1timeTaken = elapsedTime;
-    existingTeam.lastTaskEndTime = now; // mark end time for next interval
+    existingTeam.lastTaskEndTime = now; 
     existingTeam.task1CurrentAnswer = existingTeam.task1CorrectAnswer;
     await existingTeam.save();
 
@@ -436,11 +435,25 @@ export const task3edit = async (req, res) => {
     const foundTeam = await Team.findOne({ name: team });
     if (!foundTeam)
       return res.status(404).json({ message: `Team '${team}' not found` });
+    let parsedArray = null;
+    if (text && typeof text === 'string' && text.length === 9) {
+      if (/^[0-2]{9}$/.test(text)) {
+        parsedArray = text.split('').map(char => {
+          const num = parseInt(char, 10);
+          return num === 0 ? 0 : (num === 1 ? 1 : -1); // 0→0, 1→1, 2→-1
+        });
+        console.log('Parsed array for task3:', parsedArray); 
+      } else {
+        return res.status(400).json({ message: "Invalid format: Must be exactly 9 digits (0-2 only)" });
+      }
+    } else {
+      return res.status(400).json({ message: "Invalid format: Must be exactly 9 characters long" });
+    }
 
-    foundTeam.task3CorrectAnswer = text;
+    foundTeam.task3CorrectAnswer = parsedArray;
     await foundTeam.save();
 
-    res.status(200).json({ message: "Task 3 answer updated successfully" });
+    res.status(200).json({ message: "Task 3 answer updated successfully", parsed: parsedArray });
   } catch (error) {
     console.error("Error updating task3:", error);
     res.status(500).json({ message: "Server error updating task 3" });

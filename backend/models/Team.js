@@ -24,7 +24,7 @@ const teamSchema = new Schema(
 
     result: { type: Boolean, default: false },
 
-    timeTaken: { type: Number, default: 0 }, // in seconds
+    timeTaken: { type: Number, default: 0 }, 
 
     task1CorrectAnswer: { type: String },
     task1CurrentAnswer:{ type: String  },
@@ -36,8 +36,14 @@ const teamSchema = new Schema(
     task2timeTaken: { type: Number, default: 0 },
     task2Done: { type: Boolean, default: false },
 
-    task3CorrectAnswer: { type: Array },
-    task3CurrentAnswer:{ type: Array  },
+    task3CorrectAnswer: {
+      type: [Number],                 // <-- THIS IS THE FIX
+      default: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    task3CurrentAnswer: {
+      type: [Number],                 // <-- THIS IS THE FIX
+      default: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
     task3timeTaken: { type: Number, default: 0 },
     task3Done: { type: Boolean, default: false },
 

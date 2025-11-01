@@ -10,7 +10,6 @@ export const CheckAuthIOT = (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     if (token !== process.env.IOT_API_TOKEN) {
-	console.log(token);
         return res.status(403).json({ message: 'Forbidden: Invalid token' });
     }
 

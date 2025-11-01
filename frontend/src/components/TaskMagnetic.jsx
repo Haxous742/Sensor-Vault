@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { PlayWrong } from "./playWrong"; // Add import to match other tasks
 
 const TaskMagnetic = ({ socket, onTaskComplete }) => {
-  // 3x3 = 9 elements, 1/-1 = dot, 0 = no dot
+  // 3x3 = 9 elements, 1/-1 = lit red dot (N/S pole), 0 = no dot (off/gray)
   const [gridValues, setGridValues] = useState([1, 0, -1, 0, 1, 0, -1, 1, 0]);
   const [isCorrect, setIsCorrect] = useState(false);
   const [justChanged, setJustChanged] = useState(false);
@@ -13,7 +13,11 @@ const TaskMagnetic = ({ socket, onTaskComplete }) => {
       .then((res) => res.json())
       .then((data) => {
         console.log("🚀 Fetched current grid:", data);
-        setGridValues(data.grid || []);
+        // Use data.current as the 9-element array [0, -1, 1, ...]
+        const currentArray = Array.isArray(data.current) ? data.current : [];
+        // Ensure it's 9 elements, pad with 0s if needed
+        const paddedGrid = [...currentArray, ...Array(9 - currentArray.length).fill(0)].slice(0, 9);
+        setGridValues(paddedGrid);
         setIsCorrect(data.isDone || false); // Also set initial correctness
       })
       .catch((err) => {
@@ -28,7 +32,11 @@ const TaskMagnetic = ({ socket, onTaskComplete }) => {
 
     socket.on("task3Update", (data) => {
       console.log("📩 Live update from server:", data);
-      setGridValues(data.grid || []);
+      // Use data.current as the 9-element array [0, -1, 1, ...]
+      const currentArray = Array.isArray(data.current) ? data.current : [];
+      // Ensure it's 9 elements, pad with 0s if needed
+      const paddedGrid = [...currentArray, ...Array(9 - currentArray.length).fill(0)].slice(0, 9);
+      setGridValues(paddedGrid);
       setIsCorrect(data.isDone);
       if (data.isDone) {
         // Call the parent's handleDone(3) to replicate exact behavior: API call, state update, confetti, next tasks
@@ -49,69 +57,64 @@ const TaskMagnetic = ({ socket, onTaskComplete }) => {
     return () => clearTimeout(timer);
   }, [isCorrect]);
 
-  // Remove demo interval for production (uncomment if needed for testing)
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     setIsCorrect(prev => !prev);
-  //   }, 3000);
-  //   return () => clearInterval(interval);
-  // }, []);
+  // Helper to get cell class based on value (lit red for 1/-1, gray for 0)
+  const getCellClass = (val) => {
+    if (val === 0) {
+      return "bg-gray-300 scale-90"; // Off/gray
+    }
+    // Lit red for poles (1 or -1), with glow
+    return `bg-gradient-to-br from-red-400 to-red-600 shadow-[0_0_15px_rgba(239,68,68,0.6)] scale-100 relative overflow-hidden`;
+  };
 
-  const activeColor = isCorrect
-    ? "bg-gradient-to-br from-emerald-400 to-emerald-500"
-    : "bg-gradient-to-br from-rose-400 to-rose-500";
-
-  const glowColor = isCorrect
-    ? "shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-    : "shadow-[0_0_20px_rgba(244,63,94,0.4)]";
+  // Helper for polarity text
+  const getPolarity = (val) => (val === 1 ? "N" : val === -1 ? "S" : "");
 
   return (
     <div className="flex flex-col items-center align-middle mx-auto gap-8 p-10 bg-white rounded-3xl shadow-xl max-w-md">
       {/* Header with animated icon */}
       <div className="text-center space-y-2">
-        <div
-          className={`text-5xl transition-all duration-500 ${
-            justChanged ? "scale-125 rotate-12" : "scale-100 rotate-0"
-          }`}
-        >
-          {/* Add icon here if needed, e.g., 🧲 or SVG */}
-        </div>
-        
+        <div className="text-5xl">🧲</div> {/* Magnet icon */}
+        <h3 className="text-lg font-bold text-gray-700">Magnetic Field Grid</h3>
       </div>
 
-      {/* Grid display */}
+      {/* 3x3 Grid display */}
       <div
-        className={`grid grid-cols-3 gap-4 bg-gray-50 p-6 rounded-2xl transition-all duration-500 ${
-          justChanged ? "scale-105" : "scale-100"
+        className={`grid grid-cols-3 gap-3 bg-gradient-to-br from-gray-100 to-gray-200 p-6 rounded-2xl transition-all duration-500 border-2 border-gray-300 ${
+          justChanged ? "scale-105 shadow-2xl" : "shadow-lg"
         }`}
       >
         {gridValues.map((val, index) => (
           <div
             key={index}
-            className={`relative w-20 h-20 rounded-full transition-all duration-500 ${
-              val !== 0
-                ? `${activeColor} ${glowColor} scale-100`
-                : "bg-gray-200 scale-90"
+            className={`relative w-16 h-16 rounded-full transition-all duration-500 cursor-default flex items-center justify-center ${
+              getCellClass(val)
             }`}
             style={{
-              transitionDelay: `${index * 50}ms`,
-              animation: val !== 0 && justChanged ? `pulse-${isCorrect ? 'correct' : 'incorrect'} 0.6s ease-out` : 'none'
+              transitionDelay: `${(index % 3) * 50 + Math.floor(index / 3) * 150}ms`, // Staggered row-by-row
+              animation: justChanged 
+                ? `pulse-${isCorrect ? 'correct' : 'incorrect'} 0.6s ease-out forwards` 
+                : 'none'
             }}
           >
-            {/* Inner glow effect */}
+            {/* Inner glow effect for lit cells */}
             {val !== 0 && (
               <div
-                className={`absolute inset-2 rounded-full ${
-                  isCorrect ? "bg-emerald-200/50" : "bg-rose-200/50"
-                } blur-sm`}
+                className={`absolute inset-1 rounded-full ${
+                  isCorrect ? "bg-emerald-200/30" : "bg-red-200/30"
+                } blur-sm animate-ping`} // Subtle ping on correct
               ></div>
             )}
             
-            {/* Polarity indicator */}
+            {/* Polarity indicator for lit cells */}
             {val !== 0 && (
-              <div className="absolute inset-0 flex items-center justify-center text-white text-2xl font-bold drop-shadow">
-                {val === 1 ? "N" : "S"} {/* Example: Add N/S or +/− for polarity */}
+              <div className="absolute inset-0 flex items-center justify-center text-white text-lg font-bold drop-shadow-lg z-10">
+                {getPolarity(val)}
               </div>
+            )}
+
+            {/* Overlay for overall correctness (green tint on correct) */}
+            {isCorrect && val !== 0 && (
+              <div className="absolute inset-0 bg-emerald-400/20 rounded-full animate-pulse"></div>
             )}
           </div>
         ))}
@@ -137,21 +140,25 @@ const TaskMagnetic = ({ socket, onTaskComplete }) => {
         <p
           className={`text-xl font-semibold transition-all duration-500 ${
             isCorrect ? "text-emerald-600" : "text-rose-600"
-          } ${justChanged ? "tracking-wide" : "tracking-normal"}`}
+          } ${justChanged ? "tracking-wide scale-110" : "tracking-normal"}`}
         >
-          {isCorrect ? "Correct" : "Incorrect"}
+          {isCorrect ? "Correct Configuration" : "Incorrect Configuration"}
         </p>
       </div>
 
       <style>{`
         @keyframes pulse-correct {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.1); }
+          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+          70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
         @keyframes pulse-incorrect {
-          0%, 100% { transform: scale(1) rotate(0deg); }
-          25% { transform: scale(1.05) rotate(-5deg); }
-          75% { transform: scale(1.05) rotate(5deg); }
+          0%, 100% { transform: scale(1) rotate(0deg); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+          25% { transform: scale(1.05) rotate(-5deg); box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
+          75% { transform: scale(1.05) rotate(5deg); box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
+        }
+        .animate-ping {
+          animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
         }
       `}</style>
     </div>
