@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { runVictoryConfetti } from "./confetti";
 import { PlayWrong } from "./playWrong";
 
-const TaskMoarse = ({ socket }) => {
-  // State for 3-digit Morse code
+const TaskMoarse = ({ socket, onTaskComplete }) => {
   const [digits, setDigits] = useState([1, 2, 5]);
-
-  // Correctness flag
   const [isCorrect, setIsCorrect] = useState(false);
 
-  // ===== Initial Fetch =====
   useEffect(() => {
     fetch("/api/task2/current")
       .then((res) => res.json())
@@ -25,7 +20,6 @@ const TaskMoarse = ({ socket }) => {
       });
   }, []);
 
-  // ===== Socket Listener =====
   useEffect(() => {
     if (!socket) return;
     console.log("Setting up socket listener for task2Update");
@@ -35,18 +29,15 @@ const TaskMoarse = ({ socket }) => {
       const codeDigits = data.current.split("").map(Number);
       setDigits(codeDigits);
       setIsCorrect(data.isDone);
-        if(data.isDone){
-            runVictoryConfetti();
-        }
-        else
-        {
-         PlayWrong();
-        }
+      if (data.isDone) {
+        onTaskComplete(2);
+      } else {
+        PlayWrong();
+      }
     });
 
-    // Cleanup
     return () => socket.off("task2Update");
-  }, [socket]);
+  }, [socket, onTaskComplete]);
 
   return (
     <div className="flex flex-col items-center gap-8 p-10 bg-gray-50 rounded-3xl">

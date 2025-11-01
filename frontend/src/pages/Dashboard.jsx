@@ -3,6 +3,8 @@ import { io } from "socket.io-client";
 import TaskArrows from "../components/TaskArrows.jsx";
 import TaskMoarse from "../components/TaskMoarse.jsx";
 import TaskMagnetic from "../components/TaskMagnetic.jsx";
+import TaskDistance from "../components/TaskDistance.jsx";
+import { runVictoryConfetti } from "../components/confetti.js";
 
 const socket = io("/", { withCredentials: true });
 
@@ -108,59 +110,51 @@ const Dashboard = () => {
 
   const getNextTaskFromStatus = (status) => {
     if (!status) return [1, 2];
-
-    // First phase: show 1 and 2 together until both done
     if (!status.task1Done || !status.task2Done) return [1, 2];
-
-    // Then task 3
     if (!status.task3Done) return [3];
-
-    // Then task 4
     if (!status.task4Done) return [4];
-
-    // all done
     return null;
   };
 
-  const runConfetti = async () => {
-    try {
-      const confetti = (await import("canvas-confetti")).default;
+  // const runConfetti = async () => {
+  //   try {
+  //     const confetti = (await import("canvas-confetti")).default;
       
-      const duration = 2000;
-      const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+  //     const duration = 2000;
+  //     const animationEnd = Date.now() + duration;
+  //     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
-      function randomInRange(min, max) {
-        return Math.random() * (max - min) + min;
-      }
+  //     function randomInRange(min, max) {
+  //       return Math.random() * (max - min) + min;
+  //     }
 
-      const interval = setInterval(function() {
-        const timeLeft = animationEnd - Date.now();
+  //     const interval = setInterval(function() {
+  //       const timeLeft = animationEnd - Date.now();
 
-        if (timeLeft <= 0) {
-          return clearInterval(interval);
-        }
+  //       if (timeLeft <= 0) {
+  //         return clearInterval(interval);
+  //       }
 
-        const particleCount = 50 * (timeLeft / duration);
+  //       const particleCount = 50 * (timeLeft / duration);
         
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-        });
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-        });
-      }, 250);
+  //       confetti({
+  //         ...defaults,
+  //         particleCount,
+  //         origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+  //       });
+  //       confetti({
+  //         ...defaults,
+  //         particleCount,
+  //         origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+  //       });
+  //     }, 250);
 
-    } catch (err) {
-      console.warn("Confetti import failed or not installed:", err.message);
-    }
-  };
+  //   } catch (err) {
+  //     console.warn("Confetti import failed or not installed:", err.message);
+  //   }
+  // };
 
-  const runVictoryConfetti = async () => {
+  const runFinalVictoryConfetti = async () => {
     try {
       const confetti = (await import("canvas-confetti")).default;
       
@@ -367,14 +361,14 @@ const Dashboard = () => {
             setGameComplete(true);
             setIsTeamCompleted(true);
             setTimer(responseData.totalTime || timer);
-            runVictoryConfetti();
+            runFinalVictoryConfetti();
             return updated;
           }
           
           return updated;
         });
 
-        runConfetti();
+        runVictoryConfetti();
 
         if (taskNumber !== 4) {
           if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
@@ -747,10 +741,30 @@ const Dashboard = () => {
         </div>
         
         <div className="">
-          {task === 1 ? (<TaskArrows socket={socket}/>) : null}
-          {task === 2 ? (<TaskMoarse socket={socket}/>) : null}
-          {task === 3 ? (<TaskMagnetic socket={socket}/>) : null}
-          {task === 4 ? (null) : null}
+         {task === 1 ? (
+            <TaskArrows 
+              socket={socket} 
+              onTaskComplete={handleDone}  
+            />
+          ) : null}
+          {task === 2 ? (
+            <TaskMoarse 
+              socket={socket} 
+              onTaskComplete={handleDone}  
+            />
+          ) : null}
+          {task === 3 ? (
+            <TaskMagnetic 
+              socket={socket} 
+              onTaskComplete={handleDone}  // This will call handleDone(3) when correct
+            />
+          ) : null}
+          {task === 4 ? (
+            <TaskDistance 
+              socket={socket} 
+              onTaskComplete={handleDone}  // This will call handleDone(4) when correct → triggers victory
+            />
+          ) : null}
         </div>
       </div>
     ))}

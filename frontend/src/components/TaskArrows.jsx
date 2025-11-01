@@ -1,21 +1,12 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
-
-import { runVictoryConfetti } from "./confetti";
 import { PlayWrong } from "./playWrong";
 
-
-
-const TaskArrows = ({socket}) => {
-  // Current 4 directions (display only)
-  const [currentDirections,setCurrentDirections] = useState(["NE", "NE", "SE", "SW"]);
-
-  // Overall correctness flag
+const TaskArrows = ({ socket, onTaskComplete }) => {
+  const [currentDirections, setCurrentDirections] = useState(["NE", "NE", "SE", "SW"]);
   const [isCorrect, setIsCorrect] = useState(false);
 
-
   useEffect(() => {
-
     fetch("/api/task1/current")
       .then((res) => res.json())
       .then((data) => {
@@ -29,29 +20,24 @@ const TaskArrows = ({socket}) => {
       });
   }, []);
 
-
   useEffect(() => {
     if (!socket) return;
 
     socket.on("task1Update", (data) => {
       console.log("📩 Message from server:", data);
-        setIsCorrect(data.isDone);
-        if(data.isDone){
-          runVictoryConfetti();
-        }
-        else{
-         PlayWrong();
-        }
-        
-        const directions = data.current.match(/.{1,2}/g); // Split into chunks of 2
-        setCurrentDirections(directions);
+      setIsCorrect(data.isDone);
+      if (data.isDone) {
+        onTaskComplete(1);
+      } else {
+        PlayWrong();
+      }
+      
+      const directions = data.current.match(/.{1,2}/g); 
+      setCurrentDirections(directions);
     });
 
-    // Cleanup listener on unmount to avoid duplication
     return () => socket.off("task1Update");
-  }, [socket]);
-
-
+  }, [socket, onTaskComplete]);
 
   // 8x8 binary patterns for directions
   const arrowPatterns = {
