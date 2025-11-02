@@ -61,9 +61,9 @@ const TaskDistance = ({ socket, onTaskComplete }) => {
   const MAX_DISTANCE = 100;
 
   return (
-    <div className="flex flex-col items-center gap-8 p-10 bg-gray-50 rounded-3xl">
+    <div className="flex flex-col items-center gap-8 p-10 bg-[#0f0a06] border border-orange-700/30 rounded-3xl shadow-xl animate-fadeSlideIn">
       {/* Title */}
-      <h3 className="text-xl font-bold text-gray-800 mb-4">Ultrasonic Sensors</h3>
+      <h3 className="text-xl font-extrabold text-orange-200 mb-4 tracking-wide">Ultrasonic Sensors</h3>
 
       {/* 4 Sensor Visualizations */}
       <div className="space-y-6 w-full max-w-2xl">
@@ -76,32 +76,32 @@ const TaskDistance = ({ socket, onTaskComplete }) => {
             <div key={index} className="flex flex-col items-center gap-2">
               {/* Sensor Icon */}
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm">📡</span> {/* Ultrasonic sensor emoji */}
+                <div className="w-8 h-8 bg-[#1f160f] border border-orange-700/30 rounded-full flex items-center justify-center">
+                  <span className="text-orange-200 text-sm">📡</span>
                 </div>
-                <span className="text-sm font-medium text-gray-700">Sensor {index + 1}</span>
+                <span className="text-sm font-medium text-orange-200">Sensor {index + 1}</span>
               </div>
 
               {/* Distance Bar */}
-              <div className="w-full bg-gray-200 rounded-lg h-4 overflow-hidden">
+              <div className="w-full bg-[#1a120c] border border-orange-700/30 rounded-lg h-4 overflow-hidden">
                 <div
-                  className={`h-full rounded-lg transition-all duration-500 ease-in-out ${barColor} shadow-md`}
+                  className={`h-full rounded-lg transition-all duration-500 ease-in-out ${barColor} shadow-[0_0_10px_rgba(255,117,24,0.25)]`}
                   style={{ width: `${barWidth}%` }}
                 ></div>
               </div>
 
               {/* Object Representation (positioned at end of bar) */}
               <div className="flex items-center justify-between w-full px-2">
-                <span className="text-xs text-gray-500">0 cm</span>
-                <div className={`text-lg transition-transform ${isCorrect ? 'scale-110 text-emerald-600' : 'text-gray-600'}`}>
+                <span className="text-xs text-orange-300/70">0 cm</span>
+                <div className={`text-lg transition-transform ${isCorrect ? 'scale-110 text-emerald-400' : 'text-orange-200'}`}>
                   🗿 {/* Object emoji - adjust as needed */}
                 </div>
-                <span className="text-xs text-gray-500">{MAX_DISTANCE} cm</span>
+                <span className="text-xs text-orange-300/70">{MAX_DISTANCE} cm</span>
               </div>
 
               {/* Distance Value */}
-              <p className={`text-lg font-semibold transition-colors ${
-                isCorrect ? "text-emerald-600" : "text-red-600"
+              <p className={`text-lg font-extrabold transition-colors ${
+                isCorrect ? "text-emerald-400" : "text-orange-400"
               }`}>
                 {distance} cm
               </p>

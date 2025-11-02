@@ -40,7 +40,7 @@ const TaskMoarse = ({ socket, onTaskComplete }) => {
   }, [socket, onTaskComplete]);
 
   return (
-    <div className="flex flex-col items-center gap-8 p-10 bg-gray-50 rounded-3xl">
+    <div className="flex flex-col items-center gap-8 p-10 bg-[#0f0a06] border border-orange-700/30 rounded-3xl shadow-xl animate-fadeSlideIn">
       {/* Code Display */}
       <div className="flex gap-6">
         {digits.map((digit, index) => (
@@ -48,8 +48,8 @@ const TaskMoarse = ({ socket, onTaskComplete }) => {
             key={index}
             className={`w-20 h-20 flex items-center justify-center text-4xl font-bold rounded-2xl shadow-lg border-4 transition-all duration-300 ${
               isCorrect
-                ? "border-emerald-500 text-emerald-600 bg-emerald-50 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                : "border-red-500 text-red-600 bg-red-50 shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+                ? "border-emerald-500 text-emerald-300 bg-[#0e1a14] shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                : "border-orange-600 text-orange-300 bg-[#1a120c] shadow-[0_0_20px_rgba(255,117,24,0.35)]"
             }`}
           >
             {digit}
@@ -59,9 +59,9 @@ const TaskMoarse = ({ socket, onTaskComplete }) => {
 
       {/* Status Text */}
       <p
-        className={`text-lg font-semibold transition-colors ${
-          isCorrect ? "text-emerald-600" : "text-red-600"
-        }`}
+        className={`text-lg font-extrabold transition-colors ${
+          isCorrect ? "text-emerald-300" : "text-orange-300"
+        } tracking-wide`}
       >
         {isCorrect ? "✅ Correct" : "❌ Incorrect"}
       </p>

@@ -4,7 +4,6 @@ import TaskArrows from "../components/TaskArrows.jsx";
 import TaskMoarse from "../components/TaskMoarse.jsx";
 import TaskMagnetic from "../components/TaskMagnetic.jsx";
 import TaskDistance from "../components/TaskDistance.jsx";
-import { runVictoryConfetti } from "../components/confetti.js";
 
 const socket = io("/", { withCredentials: true });
 
@@ -81,6 +80,8 @@ const Dashboard = () => {
   const [activeTeam, setActiveTeam] = useState(null);
   const [showAllTasks, setShowAllTasks] = useState(true);
   const [currentTasks, setCurrentTasks] = useState([1]);
+  const [tasksVersion, setTasksVersion] = useState(0);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [gameSuccess, setGameSuccess] = useState(false);
   const [isTeamCompleted, setIsTeamCompleted] = useState(false);
@@ -96,6 +97,36 @@ const Dashboard = () => {
     { name: "", email: "" }
   ]);
   const confettiTimeoutRef = useRef(null);
+  const [showBats, setShowBats] = useState(false);
+  const [showWitch, setShowWitch] = useState(false);
+
+  // Trigger bat swarm and witch jumpscare on wrong answers
+  const triggerBats = () => {
+    setShowBats(true);
+    setTimeout(() => {
+      setShowBats(false);
+      setShowWitch(true);
+      setTimeout(() => setShowWitch(false), 2200);
+    }, 2000);
+  };
+
+  // Halloween-themed confetti burst for correct answers
+  const runHalloweenBurstConfetti = async () => {
+    try {
+      const confetti = (await import("canvas-confetti")).default;
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        startVelocity: 45,
+        scalar: 1.2,
+        ticks: 90,
+        origin: { y: 0.6 },
+        colors: ["#FF7518", "#6A0DAD", "#FFB000", "#32CD32", "#FFE066"],
+      });
+    } catch (err) {
+      console.warn("Confetti import failed or not installed:", err.message);
+    }
+  };
 
   // Save selected team to localStorage whenever it changes
   useEffect(() => {
@@ -187,13 +218,13 @@ const Dashboard = () => {
           ...defaults,
           particleCount,
           origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-          colors: ['#FFD700', '#FFA500', '#FF6347', '#00CED1', '#9370DB']
+          colors: ['#FF7518', '#6A0DAD', '#FFB000', '#32CD32', '#FFE066']
         });
         confetti({
           ...defaults,
           particleCount,
           origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-          colors: ['#FFD700', '#FFA500', '#FF6347', '#00CED1', '#9370DB']
+          colors: ['#FF7518', '#6A0DAD', '#FFB000', '#32CD32', '#FFE066']
         });
       }, 150);
 
@@ -204,6 +235,17 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchTeams();
+  }, []);
+
+  // Only animate once per session (not on every refresh)
+  useEffect(() => {
+    const alreadyAnimated = sessionStorage.getItem('halloween_animated');
+    if (!alreadyAnimated) {
+      setShouldAnimate(true);
+      sessionStorage.setItem('halloween_animated', '1');
+    } else {
+      setShouldAnimate(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -238,8 +280,20 @@ const Dashboard = () => {
       }
     });
 
+    // Listen for wrong-answer events from tasks to trigger bats
+    const wrongEvents = [
+      'task_wrong',
+      'answer_wrong',
+      'task_incorrect',
+      'answer_incorrect',
+    ];
+    wrongEvents.forEach((evt) => {
+      socket.on(evt, () => triggerBats());
+    });
+
     return () => {
       socket.off("timer_update");
+      wrongEvents.forEach((evt) => socket.off(evt));
     };
   }, [selectedTeam, taskStatus]);
 
@@ -376,7 +430,7 @@ const Dashboard = () => {
           return updated;
         });
 
-        runVictoryConfetti();
+        runHalloweenBurstConfetti();
 
         if (taskNumber !== 4) {
           if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
@@ -510,74 +564,167 @@ const Dashboard = () => {
   // Game Complete Screen
   if (gameComplete) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 text-gray-800 p-8">
-        <div className="bg-white p-12 rounded-3xl shadow-2xl text-center max-w-2xl transform transition-all">
+      <div className="flex flex-col items-center justify-center min-h-screen relative overflow-hidden text-orange-100 p-8" style={{background: 'radial-gradient(1200px 600px at 20% 10%, rgba(255,117,24,0.15), transparent 60%), radial-gradient(1000px 500px at 80% 20%, rgba(106,13,173,0.15), transparent 60%), linear-gradient(180deg, #0b0b0c 0%, #0f0a06 100%)'}}>
+        <style>{`@keyframes fogMove {0%{transform:translateX(-10%)}50%{transform:translateX(10%)}100%{transform:translateX(-10%)}} .halloween-fog{background: radial-gradient(800px 300px at 10% 30%, rgba(255,117,24,0.06), transparent 65%), radial-gradient(900px 380px at 90% 40%, rgba(106,13,173,0.08), transparent 65%); animation:fogMove 20s ease-in-out infinite; filter:blur(10px);} @keyframes batFly{0%{transform:translateX(-10%) translateY(0) scale(.9);opacity:0}10%{opacity:1}50%{transform:translateX(30vw) translateY(-10px) scale(1.05)}100%{transform:translateX(70vw) translateY(10px) scale(1);opacity:0}} .bat{width:48px;height:24px;animation:batFly 1.6s ease-in-out forwards;}`}</style>
+        <div className="absolute inset-0 pointer-events-none opacity-30" aria-hidden>
+          <div className="h-full w-full halloween-fog" />
+        </div>
+        <div className="bg-[#0f0a06] border border-orange-700/30 p-12 rounded-3xl shadow-[0_0_60px_rgba(255,117,24,0.15)] text-center max-w-2xl transform transition-all">
           {gameSuccess ? (
             <>
-              <div className="text-8xl mb-6">🎉</div>
-              <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              <div className="text-8xl mb-6">🎃</div>
+              <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent">
                 Congratulations!
               </h1>
-              <p className="text-2xl text-gray-700 mb-6">
-                Team <span className="font-bold text-blue-600">{selectedTeam}</span> completed all tasks!
+              <p className="text-2xl text-orange-200 mb-6">
+                Team <span className="font-bold text-orange-400">{selectedTeam}</span> completed all tasks!
               </p>
-              <div className="text-6xl font-mono font-bold mb-8 text-gray-800">
+              <div className="text-6xl font-mono font-bold mb-8 text-orange-200">
                 {formatTime(timer)}
               </div>
-              <p className="text-lg text-gray-600 mb-8">
+              <p className="text-lg text-orange-300/80 mb-8">
                 Amazing job! You've successfully completed all challenges.
               </p>
             </>
           ) : (
             <>
-              <div className="text-8xl mb-6">⏰</div>
-              <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+              <div className="text-8xl mb-6">🕯️</div>
+              <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-500 to-purple-500 bg-clip-text text-transparent">
                 Time's Up!
               </h1>
-              <p className="text-2xl text-gray-700 mb-6">
-                Better luck next time, <span className="font-bold text-blue-600">{selectedTeam}</span>!
+              <p className="text-2xl text-orange-200 mb-6">
+                Better luck next time, <span className="font-bold text-orange-400">{selectedTeam}</span>!
               </p>
-              <div className="text-6xl font-mono font-bold mb-8 text-gray-800">
+              <div className="text-6xl font-mono font-bold mb-8 text-orange-200">
                 15:00
               </div>
-              <p className="text-lg text-gray-600 mb-8">
+              <p className="text-lg text-orange-300/80 mb-8">
                 You ran out of time, but great effort! Try again to beat the clock.
               </p>
             </>
           )}
           <button
             onClick={handleBackToDashboard}
-            className="px-10 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg font-semibold text-xl transform hover:scale-105"
+            className="px-10 py-4 bg-gradient-to-r from-orange-600 to-purple-700 text-white rounded-2xl hover:from-orange-500 hover:to-purple-600 transition-all shadow-lg font-semibold text-xl transform hover:scale-105"
           >
             Back to Dashboard
           </button>
         </div>
+        {showBats && (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            {[...Array(14)].map((_, i) => (
+              <svg key={i} viewBox="0 0 64 32" className="absolute bat" style={{
+                left: `${(i * 7) % 100}%`,
+                top: `${(i * 13) % 90}%`,
+                animationDelay: `${(i % 7) * 0.15}s`
+              }}>
+                <path d="M2 16c6-4 10 4 14 0 4-4 8 4 12 0 4-4 8 4 12 0 4-4 8 4 12 0" fill="none" stroke="#FF7518" strokeWidth="2"/>
+                <path d="M22 16l4-4 4 4-4 4z" fill="#6A0DAD" />
+              </svg>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 text-gray-800 p-8">
+    <div className="flex flex-col items-center min-h-screen relative overflow-hidden text-orange-100 p-8" style={{background: 'radial-gradient(1200px 600px at 20% 10%, rgba(255,117,24,0.15), transparent 60%), radial-gradient(1000px 500px at 80% 20%, rgba(106,13,173,0.15), transparent 60%), linear-gradient(180deg, #0b0b0c 0%, #0f0a06 100%)'}}>
+      <style>{`
+        @keyframes fogMove {0%{transform:translateX(-10%)}50%{transform:translateX(10%)}100%{transform:translateX(-10%)}}
+        .halloween-fog{background: radial-gradient(800px 300px at 10% 30%, rgba(255,117,24,0.06), transparent 65%), radial-gradient(900px 380px at 90% 40%, rgba(106,13,173,0.08), transparent 65%); animation:fogMove 20s ease-in-out infinite; filter:blur(10px);}
+        @keyframes batFly{0%{transform:translateX(-10%) translateY(0) scale(.9);opacity:0}10%{opacity:1}50%{transform:translateX(30vw) translateY(-10px) scale(1.05)}100%{transform:translateX(70vw) translateY(10px) scale(1);opacity:0}}
+        .bat{width:48px;height:24px;animation:batFly 1.6s ease-in-out forwards;}
+        /* Stars */
+        @keyframes twinkle {0%,100%{opacity:.7}50%{opacity:1}}
+        .star{position:absolute;width:2px;height:2px;background:#FFE066;border-radius:50%;opacity:.8;animation:twinkle 2.4s ease-in-out infinite}
+        /* Shooting stars */
+        @keyframes shoot {0%{transform:translateX(0) translateY(0);opacity:1}100%{transform:translateX(-40vw) translateY(20vh);opacity:0}}
+        .shooting-star{position:absolute;width:120px;height:2px;background:linear-gradient(90deg, rgba(255,224,102,1) 0%, rgba(255,224,102,0) 100%);right:-120px;top:15%;transform:rotate(-20deg);animation:shoot 1.8s ease-out infinite;animation-delay:1s}
+        .shooting-star.two{top:45%; animation-delay:3.5s}
+        .shooting-star.three{top:70%; animation-delay:6s}
+        /* Floating pumpkins */
+        @keyframes floatPumpkin {0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        .pumpkin{animation:floatPumpkin 3s ease-in-out infinite}
+        /* Hanging spider */
+        @keyframes swing {0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+        .spider-thread{position:absolute;top:0;left:4%;width:3px;height:200px;background:rgba(255,255,255,.25)}
+        .spider{position:absolute;top:200px;left:4%;animation:swing 2.4s ease-in-out infinite}
+        /* Witch jumpscare */
+        @keyframes witchZoom {0%{opacity:0; transform:translate(-50%,-50%) scale(.8) rotate(-10deg)} 15%{opacity:1; transform:translate(-50%,-50%) scale(1.3) rotate(8deg)} 35%{transform:translate(-50%,-50%) scale(1.1) rotate(-5deg)} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0deg)}}
+        .witch{position:fixed;left:50%;top:50%;animation:witchZoom 2.2s cubic-bezier(.05,.75,.45,.98) forwards}
+        /* Moon */
+        .moon{position:absolute;right:4%;top:6%;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #FFF6D4 0%, #FCE09B 40%, rgba(252,224,155,.1) 70%, transparent 72%);box-shadow:0 0 60px rgba(252,224,155,.25)}
+        /* Entry animations (inertia-like) */
+        @keyframes fadeSlideIn {0%{opacity:0; transform:translateY(16px) scale(.98)} 60%{opacity:1; transform:translateY(-2px) scale(1.005)} 100%{opacity:1; transform:translateY(0) scale(1)}}
+        .animate-fadeSlideIn{animation:fadeSlideIn .6s cubic-bezier(.2,.7,.2,1) both}
+        @keyframes glowPulse {0%,100%{text-shadow:0 0 18px rgba(255,117,24,.25), 0 0 32px rgba(106,13,173,.2)} 50%{text-shadow:0 0 28px rgba(255,117,24,.35), 0 0 48px rgba(106,13,173,.3)}}
+        .timer-glow{animation:glowPulse 2.2s ease-in-out infinite}
+        @keyframes ringPulse {0%{transform:scale(.95); opacity:.4} 50%{transform:scale(1.02); opacity:.7} 100%{transform:scale(.95); opacity:.4}}
+        .timer-ring{animation:ringPulse 3.2s ease-in-out infinite}
+      `}</style>
+      <div className="absolute inset-0 pointer-events-none opacity-30" aria-hidden>
+        <div className="h-full w-full halloween-fog" />
+      </div>
+      {/* Decor: moon, stars, shooting stars, spider, pumpkins */}
+      <div className="moon" aria-hidden />
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
+        {[...Array(60)].map((_, i) => (
+          <span key={i} className="star" style={{
+            left: `${(i*17)%100}%`,
+            top: `${(i*29)%100}%`,
+            animationDelay: `${(i%10)*0.2}s`
+          }} />
+        ))}
+        <div className="shooting-star" />
+        <div className="shooting-star two" />
+        <div className="shooting-star three" />
+      </div>
+      <div className="spider-thread" aria-hidden />
+      <div className="spider" aria-hidden>
+        <span role="img" aria-label="spider" className="text-[8rem] drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]">🕷️</span>
+      </div>
+      {showBats && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden z-[60]">
+          {[...Array(20)].map((_, i) => (
+            <svg key={i} viewBox="0 0 64 32" className="absolute bat" style={{
+              left: `${(i * 5) % 100}%`,
+              top: `${(i * 11) % 100}%`,
+              animationDelay: `${(i % 8) * 0.1}s`
+            }}>
+              <path d="M2 16c6-4 10 4 14 0 4-4 8 4 12 0 4-4 8 4 12 0 4-4 8 4 12 0" fill="none" stroke="#FF7518" strokeWidth="2"/>
+              <path d="M22 16l4-4 4 4-4 4z" fill="#6A0DAD" />
+            </svg>
+          ))}
+        </div>
+      )}
+      {showWitch && (
+        <div className="fixed inset-0 pointer-events-none z-[70]">
+          <div className="witch text-[15rem] drop-shadow-[0_0_50px_rgba(255,255,255,0.8)]">
+            <span role="img" aria-label="witch jumpscare">🧙‍♀️</span>
+          </div>
+        </div>
+      )}
       {/* Menu Button */}
       <div className="absolute top-6 right-6">
         <button
           onClick={() => setShowMenu(!showMenu)}
-          className="p-3 rounded-xl bg-white shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+          className="p-3 rounded-xl bg-[#1a120c] border border-orange-700/30 text-orange-200 shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
         >
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
 
         {/* Dropdown Menu */}
         {showMenu && (
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+          <div className="absolute right-0 mt-2 w-48 bg-[#0f0a06] text-orange-100 rounded-xl shadow-2xl border border-orange-700/30 overflow-hidden z-50">
             <button
               onClick={() => {
                 setShowMenu(false);
                 setShowRegisterModal(true);
               }}
-              className="w-full px-6 py-3 text-left hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all font-medium text-gray-700 flex items-center gap-3"
+              className="w-full px-6 py-3 text-left hover:bg-gradient-to-r hover:from-orange-900/40 hover:to-purple-900/40 transition-all font-medium text-orange-200 flex items-center gap-3"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -589,7 +736,7 @@ const Dashboard = () => {
                 setShowMenu(false);
                 handleLogout();
               }}
-              className="w-full px-6 py-3 text-left hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 transition-all font-medium text-red-600 flex items-center gap-3 border-t border-gray-100"
+              className="w-full px-6 py-3 text-left hover:bg-gradient-to-r hover:from-orange-900/40 hover:to-purple-900/40 transition-all font-medium text-red-400 flex items-center gap-3 border-t border-orange-700/30"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -600,8 +747,14 @@ const Dashboard = () => {
         )}
       </div>
 
-      <div className="text-8xl font-mono font-bold mt-12 mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent drop-shadow-lg">
-        {formatTime(timer)}
+      <div className={`relative mt-12 mb-10 ${shouldAnimate ? 'animate-fadeSlideIn' : ''}`}> 
+        <div className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none">
+          <div className="timer-ring w-[340px] h-[340px] rounded-full" style={{background: 'radial-gradient(circle, rgba(255,117,24,.10) 0%, rgba(255,117,24,0) 60%)'}} />
+          <div className="timer-ring w-[460px] h-[460px] rounded-full absolute" style={{background: 'radial-gradient(circle, rgba(106,13,173,.06) 0%, rgba(106,13,173,0) 65%)'}} />
+        </div>
+        <div className="text-[13.5vw] leading-none md:text-[11rem] lg:text-[12rem] font-extrabold font-mono bg-gradient-to-r from-orange-200 via-orange-50 to-purple-200 bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(255,117,24,0.35)] timer-glow text-center">
+          {formatTime(timer)}
+        </div>
       </div>
 
       <div className="container flex flex-row items-center justify-center max-w-5xl w-full flex-wrap gap-12 align-middle">
@@ -611,8 +764,8 @@ const Dashboard = () => {
           disabled={!isValidTeam || !!activeTeam || isTeamCompleted}
           className={`px-8 py-3 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95 font-semibold text-lg ${
             !isValidTeam || !!activeTeam || isTeamCompleted
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-green-500/50"
+              ? "bg-gray-600/40 text-orange-300/40 cursor-not-allowed"
+              : "bg-gradient-to-r from-orange-600 to-purple-700 text-white hover:from-orange-500 hover:to-purple-600 shadow-[0_0_30px_rgba(255,117,24,0.3)]"
           }`}
         >
           Start
@@ -623,8 +776,8 @@ const Dashboard = () => {
           disabled={!activeTeam || isTeamCompleted}
           className={`px-8 py-3 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95 font-semibold text-lg ${
             activeTeam && !isTeamCompleted
-              ? "bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-red-500/50"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              ? "bg-gradient-to-r from-red-700 to-purple-800 text-white hover:from-red-600 hover:to-purple-700 shadow-[0_0_30px_rgba(255,0,0,0.25)]"
+              : "bg-gray-600/40 text-orange-300/40 cursor-not-allowed"
           }`}
         >
           Stop
@@ -637,10 +790,10 @@ const Dashboard = () => {
           value={selectedTeam}
           onChange={handleInputChange}
           placeholder="Enter or select a team..."
-          className={`w-full px-6 py-4 border-2 border-gray-300 rounded-2xl bg-white shadow-lg focus:ring-4 text-lg font-medium transition-all ${
+          className={`w-full px-6 py-4 border-2 border-orange-700/30 rounded-2xl bg-[#1a120c] text-orange-100 shadow-lg focus:ring-4 text-lg font-medium transition-all ${
             activeTeam && activeTeam === selectedTeam && !isTeamCompleted
-              ? "cursor-not-allowed bg-gray-100 border-gray-300"
-              : "focus:ring-blue-300 focus:border-blue-500 hover:border-blue-400"
+              ? "cursor-not-allowed bg-[#17110b] border-orange-700/30"
+              : "focus:ring-orange-700/30 focus:border-orange-500 hover:border-orange-400"
           }`}
           disabled={activeTeam && activeTeam === selectedTeam && !isTeamCompleted}
           onFocus={() => selectedTeam && !(activeTeam && activeTeam === selectedTeam && !isTeamCompleted) && setShowSuggestions(true)}
@@ -648,12 +801,12 @@ const Dashboard = () => {
         />
 
         {showSuggestions && filteredTeams.length > 0 && (
-          <ul className="absolute z-10 w-full mt-2 max-h-48 overflow-y-auto bg-white border-2 border-gray-200 rounded-2xl shadow-2xl">
+          <ul className="absolute z-10 w-full mt-2 max-h-48 overflow-y-auto bg-[#0f0a06] text-orange-100 border-2 border-orange-700/30 rounded-2xl shadow-2xl">
             {filteredTeams.map((team, index) => (
               <li
                 key={index}
                 onClick={() => handleSuggestionClick(team)}
-                className="px-6 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 cursor-pointer transition-all font-medium first:rounded-t-2xl last:rounded-b-2xl"
+                className="px-6 py-3 hover:bg-gradient-to-r hover:from-orange-900/40 hover:to-purple-900/40 cursor-pointer transition-all font-medium first:rounded-t-2xl last:rounded-b-2xl"
               >
                 {team}
               </li>
@@ -665,35 +818,36 @@ const Dashboard = () => {
 
       {showAllTasks ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
-          {[1, 2, 3, 4].map((task) => (
+          {[1, 2, 3, 4].map((task, idx) => (
             <div
-              key={task}
-              className="bg-white p-8 rounded-3xl shadow-xl flex flex-col items-center justify-center border-2 border-gray-100 hover:shadow-2xl transition-all transform hover:scale-105"
+              key={`${task}`}
+              className={`bg-[#0f0a06] p-12 rounded-3xl shadow-xl flex flex-col items-center justify-center border-2 border-orange-700/30 hover:shadow-2xl transition-all transform hover:scale-105 ${shouldAnimate ? 'animate-fadeSlideIn' : ''}`}
+              style={shouldAnimate ? {animationDelay: `${idx * 80}ms`} : {}}
             >
-              <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h2 className="text-3xl font-extrabold mb-8 bg-gradient-to-r from-orange-300 to-purple-300 bg-clip-text text-transparent tracking-wide">
                 Task {task}
               </h2>
 
-              <div className="flex space-x-4">
-                <button
+              <div className="flex space-x-5 text-lg">
+            <button
                   onClick={() => isValidTeam && !isTeamCompleted && setEditTask(task)}
                   disabled={!isValidTeam || isTeamCompleted}
-                  className={`px-6 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold shadow-lg ${
+                  className={`px-7 py-3.5 rounded-xl text-white active:scale-95 transition-all transform font-bold shadow-lg border border-orange-700/50 tracking-wide ${
                     isValidTeam && !isTeamCompleted
-                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      ? "bg-gradient-to-r from-orange-600 to-purple-700 hover:from-orange-500 hover:to-purple-600"
+                      : "bg-gray-600/40 text-orange-300/40 cursor-not-allowed"
                   }`}
                 >
                   Edit
                 </button>
 
-                <button
+            <button
                   onClick={() => handleDone(task)}
                   disabled={isTaskDisabled(task) || taskStatus[`task${task}Done`] || isTeamCompleted}
-                  className={`px-6 py-3 rounded-xl text-white active:scale-95 transition-all transform font-semibold shadow-lg ${
+                  className={`px-7 py-3.5 rounded-xl text-white active:scale-95 transition-all transform font-bold shadow-lg border border-orange-700/50 tracking-wide ${
                     isTaskDisabled(task) || taskStatus[`task${task}Done`] || isTeamCompleted
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                      ? "bg-gray-600/40 text-orange-300/40 cursor-not-allowed"
+                      : "bg-gradient-to-r from-orange-500 to-purple-700 hover:from-orange-400 hover:to-purple-600"
                   }`}
                 >
                   {taskStatus[`task${task}Done`] ? "Done ✓" : "Done!"}
@@ -705,13 +859,14 @@ const Dashboard = () => {
       ) : (
         <div className="flex justify-center w-full">
   <div className={`grid ${currentTasks.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 w-full`}>
-    {currentTasks.map((task) => (
+    {currentTasks.map((task, idx) => (
       <div
-        key={task}
-        className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        key={`${task}`}
+        className={`bg-gradient-to-br from-[#0f0a06] to-[#17110b] p-10 rounded-2xl shadow-lg border border-orange-700/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${shouldAnimate ? 'animate-fadeSlideIn' : ''}`}
+        style={shouldAnimate ? {animationDelay: `${idx * 80}ms`} : {}}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-extrabold bg-gradient-to-r from-orange-300 to-purple-300 bg-clip-text text-transparent tracking-wide">
             Task {task}
           </h2>
           
@@ -721,8 +876,8 @@ const Dashboard = () => {
               disabled={!isValidTeam}
               className={`group p-2.5 rounded-xl transition-all duration-300 ${
                 isValidTeam
-                  ? "bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-md hover:shadow-lg active:scale-95"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  ? "bg-gradient-to-r from-orange-600 to-purple-700 hover:from-orange-500 hover:to-purple-600 text-white shadow-md hover:shadow-lg active:scale-95"
+                  : "bg-gray-600/40 text-orange-300/40 cursor-not-allowed"
               }`}
               title="Edit"
             >
@@ -736,8 +891,8 @@ const Dashboard = () => {
               disabled={isTaskDisabled(task) || taskStatus[`task${task}Done`]}
               className={`group p-2.5 rounded-xl transition-all duration-300 ${
                 isTaskDisabled(task) || taskStatus[`task${task}Done`]
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md hover:shadow-lg active:scale-95"
+                  ? "bg-gray-600/40 text-orange-300/40 cursor-not-allowed"
+                  : "bg-gradient-to-r from-orange-500 to-purple-700 hover:from-orange-400 hover:to-purple-600 text-white shadow-md hover:shadow-lg active:scale-95"
               }`}
               title={taskStatus[`task${task}Done`] ? "Done" : "Mark as done"}
             >
@@ -791,51 +946,51 @@ const Dashboard = () => {
       {/* Register Modal */}
       {showRegisterModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
-            <h3 className="text-3xl font-bold mb-6 text-gray-800 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <div className="bg-[#0f0a06] border border-orange-700/30 text-orange-100 p-8 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
+            <h3 className="text-3xl font-bold mb-6 bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent">
               Register Team
             </h3>
             
             <div className="space-y-6">
               {/* Team Name */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-orange-200 mb-2">
                   Team Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 border-2 border-orange-700/30 rounded-xl focus:border-orange-500 focus:outline-none transition-colors bg-[#1a120c] text-orange-100"
                   placeholder="Enter team name"
                 />
               </div>
 
               {/* Team Leader */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl border-2 border-blue-100">
-                <h4 className="text-lg font-bold text-gray-800 mb-4">Team Leader</h4>
+              <div className="bg-gradient-to-r from-orange-900/20 to-purple-900/20 p-6 rounded-2xl border-2 border-orange-700/30">
+                <h4 className="text-lg font-bold text-orange-100 mb-4">Team Leader</h4>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-orange-200 mb-2">
                       Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={leaderName}
                       onChange={(e) => setLeaderName(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white"
+                      className="w-full px-4 py-3 border-2 border-orange-700/30 rounded-xl focus:border-orange-500 focus:outline-none transition-colors bg-[#1a120c] text-orange-100"
                       placeholder="Enter leader name"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-orange-200 mb-2">
                       Email <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
                       value={leaderEmail}
                       onChange={(e) => setLeaderEmail(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white"
+                      className="w-full px-4 py-3 border-2 border-orange-700/30 rounded-xl focus:border-orange-500 focus:outline-none transition-colors bg-[#1a120c] text-orange-100"
                       placeholder="Enter leader email"
                     />
                   </div>
@@ -843,17 +998,17 @@ const Dashboard = () => {
               </div>
 
               {/* Team Members */}
-              <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-200">
-                <h4 className="text-lg font-bold text-gray-800 mb-4">Team Members (Optional)</h4>
+              <div className="bg-[#17110b] p-6 rounded-2xl border-2 border-orange-700/30">
+                <h4 className="text-lg font-bold text-orange-100 mb-4">Team Members (Optional)</h4>
                 <div className="space-y-6">
                   {[1, 2, 3, 4].map((member) => {
                     const index = member - 1;
                     return (
-                      <div key={member} className="space-y-3 pb-6 border-b border-gray-300 last:border-b-0 last:pb-0">
-                        <p className="text-sm font-semibold text-gray-600">Member {member}</p>
+                      <div key={member} className="space-y-3 pb-6 border-b border-orange-700/30 last:border-b-0 last:pb-0">
+                        <p className="text-sm font-semibold text-orange-200">Member {member}</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+                            <label className="block text-xs font-medium text-orange-300 mb-1">Name</label>
                             <input
                               type="text"
                               value={members[index].name}
@@ -862,12 +1017,12 @@ const Dashboard = () => {
                                 newMembers[index].name = e.target.value;
                                 setMembers(newMembers);
                               }}
-                              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-sm"
+                              className="w-full px-4 py-2.5 border-2 border-orange-700/30 rounded-xl focus:border-orange-500 focus:outline-none transition-colors bg-[#1a120c] text-orange-100 text-sm"
                               placeholder="Member name"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+                            <label className="block text-xs font-medium text-orange-300 mb-1">Email</label>
                             <input
                               type="email"
                               value={members[index].email}
@@ -876,7 +1031,7 @@ const Dashboard = () => {
                                 newMembers[index].email = e.target.value;
                                 setMembers(newMembers);
                               }}
-                              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors bg-white text-sm"
+                              className="w-full px-4 py-2.5 border-2 border-orange-700/30 rounded-xl focus:border-orange-500 focus:outline-none transition-colors bg-[#1a120c] text-orange-100 text-sm"
                               placeholder="Member email"
                             />
                           </div>
@@ -891,7 +1046,7 @@ const Dashboard = () => {
             <div className="flex justify-end space-x-3 mt-8">
               <button 
                 onClick={() => setShowRegisterModal(false)}
-                className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium"
+                className="px-6 py-2.5 bg-[#1a120c] text-orange-200 rounded-xl hover:bg-[#20150e] transition-all font-medium border border-orange-700/30"
               >
                 Cancel
               </button>
@@ -907,7 +1062,7 @@ const Dashboard = () => {
                   handleRegistration(data);
                   setShowRegisterModal(false);
                 }}
-                className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg font-medium"
+                className="px-6 py-2.5 bg-gradient-to-r from-orange-600 to-purple-700 text-white rounded-xl hover:from-orange-500 hover:to-purple-600 transition-all shadow-lg font-medium"
               >
                 Submit
               </button>

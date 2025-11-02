@@ -57,29 +57,29 @@ const TaskMagnetic = ({ socket, onTaskComplete }) => {
     return () => clearTimeout(timer);
   }, [isCorrect]);
 
-  // Helper to get cell class based on value (lit red for 1/-1, gray for 0)
+  // Helper to get cell class based on value (lit for 1/-1, gray for 0)
   const getCellClass = (val) => {
     if (val === 0) {
       return "bg-gray-300 scale-90"; // Off/gray
     }
-    // Lit red for poles (1 or -1), with glow
-    return `bg-gradient-to-br from-red-400 to-red-600 shadow-[0_0_15px_rgba(239,68,68,0.6)] scale-100 relative overflow-hidden`;
+    // Halloween lit for poles (1 or -1), with glow
+    return `bg-gradient-to-br from-orange-500 to-purple-700 shadow-[0_0_15px_rgba(255,117,24,0.6)] scale-100 relative overflow-hidden`;
   };
 
   // Helper for polarity text
   const getPolarity = (val) => (val === 1 ? "N" : val === -1 ? "S" : "");
 
   return (
-    <div className="flex flex-col items-center align-middle mx-auto gap-8 p-10 bg-white rounded-3xl shadow-xl max-w-md">
+    <div className="flex flex-col items-center align-middle mx-auto gap-8 p-10 bg-[#0f0a06] border border-orange-700/30 rounded-3xl shadow-xl max-w-md animate-fadeSlideIn">
       {/* Header with animated icon */}
       <div className="text-center space-y-2">
         <div className="text-5xl">🧲</div> {/* Magnet icon */}
-        <h3 className="text-lg font-bold text-gray-700">Magnetic Field Grid</h3>
+        <h3 className="text-lg font-extrabold text-orange-200 tracking-wide">Magnetic Field Grid</h3>
       </div>
 
       {/* 3x3 Grid display */}
       <div
-        className={`grid grid-cols-3 gap-3 bg-gradient-to-br from-gray-100 to-gray-200 p-6 rounded-2xl transition-all duration-500 border-2 border-gray-300 ${
+        className={`grid grid-cols-3 gap-3 bg-gradient-to-br from-[#17110b] to-[#1f160f] p-6 rounded-2xl transition-all duration-500 border-2 border-orange-700/30 ${
           justChanged ? "scale-105 shadow-2xl" : "shadow-lg"
         }`}
       >
@@ -100,8 +100,8 @@ const TaskMagnetic = ({ socket, onTaskComplete }) => {
             {val !== 0 && (
               <div
                 className={`absolute inset-1 rounded-full ${
-                  isCorrect ? "bg-emerald-200/30" : "bg-red-200/30"
-                } blur-sm animate-ping`} // Subtle ping on correct
+                  isCorrect ? "bg-emerald-200/20" : "bg-orange-200/10"
+                } blur-sm animate-ping`}
               ></div>
             )}
             
@@ -114,7 +114,7 @@ const TaskMagnetic = ({ socket, onTaskComplete }) => {
 
             {/* Overlay for overall correctness (green tint on correct) */}
             {isCorrect && val !== 0 && (
-              <div className="absolute inset-0 bg-emerald-400/20 rounded-full animate-pulse"></div>
+              <div className="absolute inset-0 bg-emerald-400/15 rounded-full animate-pulse"></div>
             )}
           </div>
         ))}
@@ -128,18 +128,18 @@ const TaskMagnetic = ({ socket, onTaskComplete }) => {
           }`}
         >
           {isCorrect ? (
-            <svg className="w-7 h-7 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
             </svg>
           ) : (
-            <svg className="w-7 h-7 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-7 h-7 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
             </svg>
           )}
         </div>
         <p
-          className={`text-xl font-semibold transition-all duration-500 ${
-            isCorrect ? "text-emerald-600" : "text-rose-600"
+          className={`text-xl font-extrabold transition-all duration-500 ${
+            isCorrect ? "text-emerald-300" : "text-orange-300"
           } ${justChanged ? "tracking-wide scale-110" : "tracking-normal"}`}
         >
           {isCorrect ? "Correct Configuration" : "Incorrect Configuration"}

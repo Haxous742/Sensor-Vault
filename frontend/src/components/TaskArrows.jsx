@@ -87,31 +87,31 @@ const TaskArrows = ({ socket, onTaskComplete }) => {
 
   // LED color based on correctness
   const colorClass = isCorrect
-    ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"
-    : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
+    ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]"
+    : "bg-orange-500 shadow-[0_0_10px_rgba(255,117,24,0.8)]";
 
   return (
-    <div className="flex flex-col items-center gap-8 p-10 bg-gray-50 rounded-3xl">
+    <div className="flex flex-col items-center gap-8 p-10 bg-[#0f0a06] border border-orange-700/30 rounded-3xl shadow-xl animate-fadeSlideIn">
       {/* Arrow Grid Section */}
       <div className="flex flex-wrap justify-center items-center gap-10">
         {currentDirections.map((dir, index) => (
           <div key={index} className="flex flex-col items-center gap-3">
-            <div className="grid grid-cols-8 gap-[3px] p-2 rounded-xl shadow-xl bg-gray-200">
+            <div className="grid grid-cols-8 gap-[3px] p-2 rounded-xl shadow-xl bg-[#17110b] border border-orange-700/20">
               {getPattern(dir).map((row, rowIndex) =>
                 row.split("").map((bit, colIndex) => (
                   <div
                     key={`${rowIndex}-${colIndex}`}
                     className={`w-3 h-3 rounded-full transition-all ${
-                      bit === "1" ? colorClass : "bg-gray-300"
+                      bit === "1" ? colorClass : "bg-gray-700"
                     }`}
                   ></div>
                 ))
               )}
             </div>
             <p
-              className={`text-sm font-semibold transition-colors ${
-                isCorrect ? "text-emerald-600" : "text-red-600"
-              }`}
+              className={`text-sm font-bold transition-colors ${
+                isCorrect ? "text-emerald-300" : "text-orange-300"
+              } tracking-wide uppercase drop-shadow`}
             >
               {dir}
             </p>
@@ -121,9 +121,9 @@ const TaskArrows = ({ socket, onTaskComplete }) => {
 
       {/* Correctness Display */}
       <p
-        className={`text-lg font-semibold transition-colors ${
-          isCorrect ? "text-emerald-600" : "text-red-600"
-        }`}
+        className={`text-lg font-extrabold transition-colors ${
+          isCorrect ? "text-emerald-300" : "text-orange-300"
+        } tracking-wide`}
       >
         {isCorrect ? "✅ Correct" : "❌ Incorrect"}
       </p>
