@@ -24,19 +24,32 @@ const EditTaskModal = ({ taskNumber, team, onClose }) => {
 
   return (
     // fully black background (opaque)
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-90 z-50">
-      <div className="bg-white p-6 rounded-2xl shadow-lg w-80 relative">
-        <h2 className="text-xl font-semibold mb-4 text-center">
-          Edit Task {taskNumber}
-        </h2>
+    <>
+      <style>{`
+        input.edit-task-input,
+        input.edit-task-input[type="text"],
+        .edit-task-input {
+          color: #000000 !important;
+        }
+        input.edit-task-input::placeholder,
+        .edit-task-input::placeholder {
+          color: #9ca3af !important;
+        }
+      `}</style>
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-90 z-50">
+        <div className="bg-white p-6 rounded-2xl shadow-lg w-80 relative">
+          <h2 className="text-xl font-semibold mb-4 text-center">
+            Editt Task {taskNumber}
+          </h2>
 
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Enter new correct answer..."
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 focus:ring-2 focus:ring-blue-400"
-        />
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Enter new correct answer..."
+            className="edit-task-input w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 focus:ring-2 focus:ring-blue-400"
+            style={{ color: '#000000' }}
+          />
 
         <div className="flex justify-between">
           <button
@@ -60,6 +73,7 @@ const EditTaskModal = ({ taskNumber, team, onClose }) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

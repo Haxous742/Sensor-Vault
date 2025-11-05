@@ -31,7 +31,7 @@ const EditTaskModal = ({ taskNumber, team, onClose }) => {
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          className="w-full p-4 border-2 border-gray-200 rounded-xl mb-6 focus:border-blue-500 focus:outline-none transition-colors resize-none"
+          className="w-full p-4 border-2 border-gray-200 text-black rounded-xl mb-6 focus:border-blue-500 focus:outline-none transition-colors resize-none"
           rows={taskNumber === 3 ? 1 : 5} // Single line for task 3 (9 chars)
           placeholder={taskNumber === 3 ? "Enter 9 digits (0=off, 1=N pole, 2=S pole): e.g., 101010121" : "Enter task details..."}
           maxLength={taskNumber === 3 ? 9 : undefined}
