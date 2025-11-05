@@ -509,6 +509,11 @@ export const teamProgress = async (req, res) => {
 
 export const leaderboard = async (req, res) => {
   try {
+    
+    if (process.env.PUBICHAIR === "false") {
+      
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     // Fetch all teams from the database
     const teams = await Team.find({}).sort({ timeTaken: 1 }); // Sort by time taken (ascending)
 

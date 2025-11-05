@@ -51,6 +51,10 @@ export const taskArrowsController = async(req, res) => {
 export const taskDistanceController = async(req, res) => {
   const { current } = req.body;
 
+  if(!team){
+    res.status(404).json({message:"No team found with current task active"});
+  }
+
    if(!current || typeof current !== 'string'){
     return res.status(400).json({message:"Invalid current value"});
   }
@@ -58,10 +62,6 @@ export const taskDistanceController = async(req, res) => {
   const io = getIO();
 
   const team = await Team.findOne({current:true});
-
-  if(!team){
-    res.status(404).json({message:"No team found with current task active"});
-  }
 
   const correctAnswer= team.task4CorrectAnswer;
   
@@ -94,6 +94,10 @@ export const taskDistanceController = async(req, res) => {
 export const taskMorseController = async(req, res) => {
   const { current } = req.body;
 
+  if(!team){
+    res.status(404).json({message:"No team found with current task active"});
+  }
+
    if(!current || typeof current !== 'string'){
     return res.status(400).json({message:"Invalid current value"});
   }
@@ -101,10 +105,6 @@ export const taskMorseController = async(req, res) => {
   const io = getIO();
 
   const team = await Team.findOne({current:true});
-
-  if(!team){
-    res.status(404).json({message:"No team found with current task active"});
-  }
 
   const correctAnswer= team.task2CorrectAnswer;
   
@@ -140,6 +140,10 @@ export const taskMorseController = async(req, res) => {
 export const taskMagneticController = async (req, res) => {
   const { current } = req.body;
 
+  if (!team) {
+    return res.status(404).json({ message: "No team found with current task active" });
+  }
+
   if (!current || !Array.isArray(current) || current.length !== 9) {
     console.error('Invalid current array:', current); 
     return res.status(400).json({ message: "Invalid current value: Must be a 9-element array" });
@@ -152,10 +156,6 @@ export const taskMagneticController = async (req, res) => {
 
   const io = getIO();
   const team = await Team.findOne({ current: true });
-
-  if (!team) {
-    return res.status(404).json({ message: "No team found with current task active" });
-  }
 
   const correctAnswer = team.task3CorrectAnswer;
   
