@@ -25,7 +25,7 @@ const EditTaskModal = ({ taskNumber, team, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+    <div className="fixed inset-0 bg-tranparent bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
       <div className="bg-white p-8 rounded-3xl shadow-2xl w-96 transform transition-all">
         <h3 className="text-2xl font-bold mb-6 text-gray-800">Edit Task {taskNumber}</h3>
         <textarea
@@ -80,7 +80,7 @@ const Dashboard = () => {
   const [activeTeam, setActiveTeam] = useState(null);
   const [showAllTasks, setShowAllTasks] = useState(true);
   const [currentTasks, setCurrentTasks] = useState([1]);
-  const [tasksVersion, setTasksVersion] = useState(0);
+  // const [tasksVersion, setTasksVersion] = useState(0);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [gameSuccess, setGameSuccess] = useState(false);
@@ -648,8 +648,8 @@ const Dashboard = () => {
         .pumpkin{animation:floatPumpkin 3s ease-in-out infinite}
         /* Hanging spider */
         @keyframes swing {0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
-        .spider-thread{position:absolute;top:0;left:4%;width:3px;height:200px;background:rgba(255,255,255,.25)}
-        .spider{position:absolute;top:200px;left:4%;animation:swing 2.4s ease-in-out infinite}
+        .spider-thread{position:absolute;top:0;left:10.4%;width:4px;height:200px;background:rgba(255,255,255,.25)}
+        .spider{position:absolute;top:100px;left:4%;animation:swing 2.4s ease-in-out infinite}
         /* Witch jumpscare */
         @keyframes witchZoom {0%{opacity:0; transform:translate(-50%,-50%) scale(.8) rotate(-10deg)} 15%{opacity:1; transform:translate(-50%,-50%) scale(1.3) rotate(8deg)} 35%{transform:translate(-50%,-50%) scale(1.1) rotate(-5deg)} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0deg)}}
         .witch{position:fixed;left:50%;top:50%;animation:witchZoom 2.2s cubic-bezier(.05,.75,.45,.98) forwards}
@@ -682,7 +682,7 @@ const Dashboard = () => {
       </div>
       <div className="spider-thread" aria-hidden />
       <div className="spider" aria-hidden>
-        <span role="img" aria-label="spider" className="text-[8rem] drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]">🕷️</span>
+        <span role="img" aria-label="spider" className="text-[10rem] drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]">🕷️</span>
       </div>
       {showBats && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden z-[60]">
@@ -857,8 +857,8 @@ const Dashboard = () => {
           ))}
         </div>
       ) : (
-        <div className="flex justify-center w-full">
-  <div className={`grid ${currentTasks.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 w-full`}>
+        <div className="flex justify-center w-full"> 
+  <div className={`grid ${currentTasks.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-6 w-full h-[60vh] mx-auto`}>
     {currentTasks.map((task, idx) => (
       <div
         key={`${task}`}
