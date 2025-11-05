@@ -51,6 +51,8 @@ export const taskArrowsController = async(req, res) => {
 export const taskDistanceController = async(req, res) => {
   const { current } = req.body;
 
+  const team = await Team.findOne({current:true});
+
   if(!team){
     res.status(404).json({message:"No team found with current task active"});
   }
@@ -60,8 +62,6 @@ export const taskDistanceController = async(req, res) => {
   }
 
   const io = getIO();
-
-  const team = await Team.findOne({current:true});
 
   const correctAnswer= team.task4CorrectAnswer;
   
@@ -94,6 +94,8 @@ export const taskDistanceController = async(req, res) => {
 export const taskMorseController = async(req, res) => {
   const { current } = req.body;
 
+  const team = await Team.findOne({current:true});
+
   if(!team){
     res.status(404).json({message:"No team found with current task active"});
   }
@@ -104,7 +106,6 @@ export const taskMorseController = async(req, res) => {
 
   const io = getIO();
 
-  const team = await Team.findOne({current:true});
 
   const correctAnswer= team.task2CorrectAnswer;
   
@@ -140,6 +141,8 @@ export const taskMorseController = async(req, res) => {
 export const taskMagneticController = async (req, res) => {
   const { current } = req.body;
 
+  const team = await Team.findOne({ current: true });
+
   if (!team) {
     return res.status(404).json({ message: "No team found with current task active" });
   }
@@ -155,7 +158,6 @@ export const taskMagneticController = async (req, res) => {
   });
 
   const io = getIO();
-  const team = await Team.findOne({ current: true });
 
   const correctAnswer = team.task3CorrectAnswer;
   
