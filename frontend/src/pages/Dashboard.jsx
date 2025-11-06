@@ -4,6 +4,7 @@ import TaskArrows from "../components/TaskArrows.jsx";
 import TaskMoarse from "../components/TaskMoarse.jsx";
 import TaskMagnetic from "../components/TaskMagnetic.jsx";
 import TaskDistance from "../components/TaskDistance.jsx";
+import { PlayRight } from "../components/playRight.js";
 
 const socket = io("/", { withCredentials: true });
 
@@ -430,6 +431,7 @@ const Dashboard = () => {
           return updated;
         });
 
+        PlayRight();
         runHalloweenBurstConfetti();
 
         if (taskNumber !== 4) {
@@ -648,7 +650,7 @@ const Dashboard = () => {
         .pumpkin{animation:floatPumpkin 3s ease-in-out infinite}
         /* Hanging spider */
         @keyframes swing {0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
-        .spider-thread{position:absolute;top:0;left:10.4%;width:4px;height:200px;background:rgba(255,255,255,.25)}
+        .spider-thread{position:absolute;top:0;left:9.7%;width:4px;height:200px;background:rgba(255,255,255,.25)}
         .spider{position:absolute;top:100px;left:4%;animation:swing 2.4s ease-in-out infinite}
         /* Witch jumpscare */
         @keyframes witchZoom {0%{opacity:0; transform:translate(-50%,-50%) scale(.8) rotate(-10deg)} 15%{opacity:1; transform:translate(-50%,-50%) scale(1.3) rotate(8deg)} 35%{transform:translate(-50%,-50%) scale(1.1) rotate(-5deg)} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0deg)}}
