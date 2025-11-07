@@ -40,7 +40,7 @@ export const login = async (req, res) => {
         httpOnly: true,
         secure: true,  // ✅ use false only for local dev
         sameSite: "none",
-        maxAge: 360000000
+        maxAge: 1000 * 60 * 60 * 24 * 365 * 100
       });
       return res.status(200).json({ success: true, message: "Login successful" });
     } else {

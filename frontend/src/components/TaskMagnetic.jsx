@@ -67,7 +67,7 @@ const TaskMagnetic = ({ socket, onTaskComplete }) => {
   };
 
   // Helper for polarity text
-  const getPolarity = (val) => (val === 1 ? "N" : val === -1 ? "S" : "");
+  const getPolarity = (val) => (val === 1 ? "W" : val === -1 ? "C" : "");
 
   return (
     <div className="flex flex-col items-center align-middle mx-auto gap-8 p-10 bg-[#0f0a06] border border-orange-700/30 rounded-3xl shadow-xl max-w-md animate-fadeSlideIn">

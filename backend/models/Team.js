@@ -38,7 +38,7 @@ const teamSchema = new Schema(
 
     task3CorrectAnswer: {
       type: [Number],                 
-      default: [0,-1,0,-1,0,-1,0,-1,0]
+      default: [0,-1,-1,0,-1,0,-1,-1,0]
     },
     task3CurrentAnswer: {
       type: [Number],                
@@ -47,7 +47,7 @@ const teamSchema = new Schema(
     task3timeTaken: { type: Number, default: 0 },
     task3Done: { type: Boolean, default: false },
 
-    task4CorrectAnswer: { type: String, default: "12243268" },
+    task4CorrectAnswer: { type: String, default: "10151020" },
     task4CurrentAnswer:{ type: String  },
     task4timeTaken: { type: Number, default: 0 },
     task4Done: { type: Boolean, default: false },
