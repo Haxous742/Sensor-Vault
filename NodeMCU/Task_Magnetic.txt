@@ -16,7 +16,7 @@ float zeroField[8];  // Calibration offsets
 // ====== Wi-Fi Config ======
 const char* ssid = "IIITB-Milan";
 const char* username = "iiitb\\Aryan.Sharma12";
-const char* password = "F0y91zEG";
+const char* password = "Removed MilanPass";
 const char* serverName = "https://sensorvault.live/api/iot/taskmagnetic";
 
 // ====== Function Prototypes ======
